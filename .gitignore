@@ -1,3 +1,6 @@
 .ven
 .venv
 data
+__pycache__/
+*.egg-info/
+src/test
