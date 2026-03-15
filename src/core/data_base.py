@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
-import cv2
 from utils import file
+from config import DEFAULT_SIZE
 
 class Object(ABC):
     @abstractmethod
@@ -11,6 +11,10 @@ class Object(ABC):
     def save(path: str):
         pass
 
+    @abstractmethod
+    def info():
+        pass
+
 
 
 class ImageDataset(Object):
@@ -18,6 +22,13 @@ class ImageDataset(Object):
     # Constructor
     def __init__(self, folder_path: str):
         self._folder_path = folder_path
+        self._images = None
+        self._class_idx = None
+        self._labels = None
+        self._paths = None
+        self._size = 0
+        self._shape = (0,0,0,0)
+        self._image_size = DEFAULT_SIZE
         return
     
     # Getter
@@ -36,13 +47,24 @@ class ImageDataset(Object):
     @property
     def image_paths(self):
         return self._paths
+    
+    @property
+    def image_size(self):
+        return self._image_size
+    
+    @property
+    def dataset_shape(self):
+        return self._shape
 
     # Setter
     @images.setter
     def images(self, value):
-        if not value:
-            raise ValueError("Iamges cannot be empty")
+        if not value or len(value):
+            raise ValueError("Images Folder cannot be empty")
         self._images = value
+        self._size = len(self._images)
+        self._shape = (self._size, *value[0].shape)
+
 
     @class_idx.setter
     def class_idx(self, value):
@@ -64,18 +86,25 @@ class ImageDataset(Object):
 
     # Method
     def load(self):
-        X, Y, class_idx, paths = file.load_images(path=self.path)
+        X, Y, class_idx, paths = file.load_images(path=self._folder_path, image_size= self._image_size)
         self._images = X
         self._labels = Y
         self._class_idx = class_idx
         self._paths = paths
+        self._size = len(X)
+        self._shape = (len(X), *X[0].shape)
         return
     
     def save(self, folder_path: str | None = None):
         folder_path = folder_path or self._folder_path
         file.save_images(folder_path, self._images)
         return
-
+    
+    def info(self):
+        print("Folder Path: ", self._folder_path if self._folder_path is not None else "Empty")
+        print("Total Images: ", len(self._images) if self._images is not None else 0)
+        print(f"Image Size: {self._image_size}")
+        print(f"Dataset Shape: {self._shape} (N,H,W,C)")
 
 class TableDataset(Object):
     def load(path: str):
