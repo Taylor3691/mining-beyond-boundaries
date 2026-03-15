@@ -8,7 +8,7 @@ def load_images(path: str, image_size = (128,128)):
     class_names = config.CLASS_NAMES
     class_to_idx = config.CLASS_INDEX
 
-    X,Y,paths = [],[],[]
+    X,Y, file_names ,paths = [],[],[],[]
 
     exts = config.IMAGE_EXTS
     for class_name in class_names:
@@ -29,11 +29,12 @@ def load_images(path: str, image_size = (128,128)):
 
             X.append(img)
             Y.append(class_to_idx[class_name])
+            file_names.append(str(item.name))
             paths.append(str(item))
 
     X = np.array(X, dtype=np.uint8)
     Y = np.array(Y, dtype=np.int64)
-    return X, Y, paths, class_to_idx
+    return X, Y, paths, class_to_idx, file_names
 
 def load_table(path: str):
     return

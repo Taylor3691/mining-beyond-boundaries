@@ -29,6 +29,7 @@ class ImageDataset(Object):
         self._size = 0
         self._shape = (0,0,0,0)
         self._image_size = DEFAULT_SIZE
+        self._file_names = None
         return
     
     # Getter
@@ -86,13 +87,14 @@ class ImageDataset(Object):
 
     # Method
     def load(self):
-        X, Y, class_idx, paths = file.load_images(path=self._folder_path, image_size= self._image_size)
+        X, Y, class_idx, paths, file_names = file.load_images(path=self._folder_path, image_size= self._image_size)
         self._images = X
         self._labels = Y
         self._class_idx = class_idx
         self._paths = paths
         self._size = len(X)
         self._shape = (len(X), *X[0].shape)
+        self._file_names = file_names
         return
     
     def save(self, folder_path: str | None = None):
@@ -101,10 +103,17 @@ class ImageDataset(Object):
         return
     
     def info(self):
-        print("Folder Path: ", self._folder_path if self._folder_path is not None else "Empty")
-        print("Total Images: ", len(self._images) if self._images is not None else 0)
-        print(f"Image Size: {self._image_size}")
-        print(f"Dataset Shape: {self._shape} (N,H,W,C)")
+        print("Metadata of Dataset")
+        print("\tFolder Path:", self._folder_path if self._folder_path is not None else "Empty")
+        print("\tTotal Images:", len(self._images) if self._images is not None else 0)
+        print(f"\tImage Size:{self._image_size}")
+        print(f"\tDataset Shape:{self._shape} (N,H,W,C)")
+
+        print("\tName of file of 5 first sample")
+        for i in range(1, min(self._size,5)):
+            print(f"\t \t {i}: {self._file_names[i]}")
+        
+        return
 
 class TableDataset(Object):
     def load(path: str):
