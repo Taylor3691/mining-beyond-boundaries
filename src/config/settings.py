@@ -5,6 +5,7 @@ from pathlib import Path
 _PROJECT_ROOT = Path(__file__).resolve().parents[2]
 PATH_FOLDER_RAW = str(_PROJECT_ROOT / "data")
 PATH_FOLDER_IMAGE_RAW = str(Path(PATH_FOLDER_RAW) / "image")
+PATH_FOLDER_IMAGE_TEST = str(Path(PATH_FOLDER_RAW) / "small")
 PATH_FOLDER_TABLE_RAW = str(Path(PATH_FOLDER_RAW) / "table")
 
 

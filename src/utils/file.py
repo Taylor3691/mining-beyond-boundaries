@@ -27,7 +27,7 @@ def load_images(path: str, image_size = (128,128)):
 
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             img = cv2.resize(img, image_size, interpolation=cv2.INTER_AREA)
-            file_name = class_name + "_" + str(count)
+            file_name = class_name + "_" + str(count) + item.suffix.lower()
 
             X.append(img)
             Y.append(class_to_idx[class_name])
@@ -43,7 +43,18 @@ def load_images(path: str, image_size = (128,128)):
 def load_table(path: str):
     return
 
-def save_images(path: str, images):
+def save_images(path: str, images: np.ndarray, file_names: list[str], is_classwise: bool = True):
+    folder_save = Path(path)
+    folder_save.mkdir(parents=True, exist_ok=True)
+    if is_classwise:
+        for image, name in zip(images, file_names):
+            class_name = name.split("_")[0]
+            save_path = folder_save / Path(class_name)
+            save_path.mkdir(parents=True, exist_ok=True)
+            cv2.imwrite(str(save_path/name), image)
+    else:
+        for image, name in zip(images, file_names):
+            cv2.imwrite(str(folder_save/ name), image)
     return
 
 def save_table(path: str):

@@ -83,9 +83,9 @@ class ImageDataset(Object):
         self._file_names = file_names
         return
     
-    def save(self, folder_path: str | None = None):
+    def save(self, folder_path: str | None = None, is_classwise: bool= True):
         folder_path = folder_path or self._folder_path
-        file.save_images(folder_path, self._images)
+        file.save_images(folder_path, self._images, self._file_names, is_classwise)
         return
     
     def info(self):
