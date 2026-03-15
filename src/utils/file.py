@@ -38,7 +38,7 @@ def load_images(path: str, image_size = (128,128)):
 def load_table(path: str):
     return
 
-def save_images(path: str):
+def save_images(path: str, images):
     return
 
 def save_table(path: str):
