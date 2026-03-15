@@ -12,6 +12,7 @@ def load_images(path: str, image_size = (128,128)):
 
     exts = config.IMAGE_EXTS
     for class_name in class_names:
+        count  = 0
         class_dir = root / class_name
         if not class_dir.exists():
             continue
@@ -26,11 +27,14 @@ def load_images(path: str, image_size = (128,128)):
 
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             img = cv2.resize(img, image_size, interpolation=cv2.INTER_AREA)
+            file_name = class_name + "_" + str(count)
 
             X.append(img)
             Y.append(class_to_idx[class_name])
-            file_names.append(str(item.name))
+            file_names.append(str(file_name))
             paths.append(str(item))
+
+            count+=1
 
     X = np.array(X, dtype=np.uint8)
     Y = np.array(Y, dtype=np.int64)
