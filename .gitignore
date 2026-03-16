@@ -1,6 +1,8 @@
 .ven
 .venv
-data
+data/*
 __pycache__/
 *.egg-info/
 src/test
+!data/small/
+!data/small/**

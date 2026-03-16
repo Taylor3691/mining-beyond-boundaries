@@ -1,27 +1,25 @@
-from abc import ABC, abstractmethod
-import numpy as np
+from core import Visualization
+from image import ImageDataset
 
-class PixelDistribution(ABC):
-    @abstractmethod
-    def fit():
-        pass
+class Distribution(Visualization):
+    pass
 
-    @abstractmethod
-    def count():
-        pass
-
-class HistogramDistribution(PixelDistribution):
-    def fit():
+class HistogramDistribution(Distribution):
+    def run():
         return
     
-    def count():
-        return
-    
-
-class KDEDistribution(PixelDistribution):
-    def fit():
-        return
-    
-    def count():
+    def visitImageDataset(obj: ImageDataset):
         return
 
+    def log(self):
+        return
+    
+class KDEDistribution(Visualization):
+    def run():
+        return
+    
+    def visitImageDataset(obj: ImageDataset):
+        return
+    
+    def log(self):
+        return

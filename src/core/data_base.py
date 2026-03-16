@@ -16,6 +16,10 @@ class Object(ABC):
     @abstractmethod
     def clone():
         pass
+    
+    @abstractmethod
+    def accept():
+        pass
 
 class TableDataset(Object):
     def load(path: str):

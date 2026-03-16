@@ -1,4 +1,4 @@
-from core import Object
+from core import Object, Service
 from utils import file
 from config import DEFAULT_SIZE, PATH_FOLDER_IMAGE_RAW
 
@@ -116,3 +116,7 @@ class ImageDataset(Object):
         dataset_clone._images = [img.copy() for img in self._images]
 
         return dataset_clone
+    
+    def accept(self, service: Service):
+        service.run(self)
+        return
