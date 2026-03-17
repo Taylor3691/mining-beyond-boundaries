@@ -23,9 +23,6 @@ class SubPipeline(Pipeline):
         return
 
 class Service(Pipeline):
-    pass
-
-class Visualization(Service):
     """
     @abstractmethod
     def visitTabbleDataset():
@@ -35,6 +32,9 @@ class Visualization(Service):
     @abstractmethod
     def visitImageDataset():
         pass
+
+class Visualization(Service):
+    pass
 
 class Preprocessing(Service):
     def __init__(self):
