@@ -1,2 +1,13 @@
-numpy
+# Core Data Science Libraries (pin numpy to a compatible version)
+numpy==1.26.4
+scikit-learn
+scipy
+matplotlib
+
+# Image Processing Libraries
 opencv-python
+imagehash
+Pillow
+
+# Utility
+tqdm
