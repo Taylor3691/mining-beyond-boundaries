@@ -1,12 +1,12 @@
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# Task 8: Định nghĩa 2 hàm Visualize phân phối Histogram và KDE 
+# Task 8
 
 def plot_histogram(pixel_data, title_suffix=""):
     """
     Vẽ biểu đồ Histogram. 
-    Sử dụng Subplots (1 hàng, 3 cột) để tách biệt 3 kênh R, G, B cho dễ nhìn.
+    Sử dụng Subplots (1 hàng, 3 cột) để tách biệt 3 kênh R, G, B.
     """
     fig, axes = plt.subplots(1, 3, figsize=(18, 5), sharey=True)
     fig.suptitle(f'Pixel Intensity Distribution (Histogram) {title_suffix}', fontsize=16, fontweight='bold')
@@ -28,8 +28,8 @@ def plot_histogram(pixel_data, title_suffix=""):
 
 def plot_kde(pixel_data, title_suffix=""):
     """
-    Vvẽ biểu đồ KDE.
-    Sử dụng Subplots (1 hàng, 3 cột) để tách biệt 3 đường cong phân phối.
+    Vẽ biểu đồ KDE.
+    Sử dụng Subplots (1 hàng, 3 cột) để vẽ 3 phân phối của 3 kênh màu.
     """
     fig, axes = plt.subplots(1, 3, figsize=(18, 5), sharey=True)
     fig.suptitle(f'Kernel Density Estimation (KDE) {title_suffix}', fontsize=16, fontweight='bold')
