@@ -1,9 +1,15 @@
+import sys
+import os
+
+# Đảm bảo Python nhận diện được thư mục gốc để import visualization và core
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 from core import Visualization
 from image.dataset import ImageDataset
-
+from visualization import plot_deduplicate_comparison
 
 class ImageDeduplication(Visualization):
     """
@@ -104,24 +110,6 @@ class ImageDeduplication(Visualization):
                     self._indices_to_remove.add(j)
                     checked_indices[j] = True
 
-    def _visualize_comparison(self):
-        """
-        Uses a bar chart to visualize the number of images before and after deduplication.
-        """
-        labels = ['Before Removal', 'After Removal']
-        counts = [self._initial_count, self._final_count]
-
-        plt.figure(figsize=(8, 6))
-        bars = plt.bar(labels, counts, color=['#1f77b4', '#ff7f0e'])
-        plt.ylabel('Number of Images')
-        plt.title('Image Count Before and After Deduplication')
-        
-        for bar in bars:
-            yval = bar.get_height()
-            plt.text(bar.get_x() + bar.get_width()/2.0, yval, int(yval), va='bottom')
-
-        plt.show()
-
     def visitImageDataset(self, obj: ImageDataset):
         """
         Executes the entire analysis pipeline on an ImageDataset object.
@@ -137,7 +125,8 @@ class ImageDeduplication(Visualization):
             
             self._final_count = self._initial_count - len(self._indices_to_remove)
             
-            self._visualize_comparison()
+            # Uses a bar chart to visualize the number of images before and after deduplication
+            plot_deduplicate_comparison(self._initial_count, self._final_count)
             
             self._status = "Success"
         except Exception as e:
