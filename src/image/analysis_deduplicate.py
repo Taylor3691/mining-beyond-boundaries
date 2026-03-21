@@ -153,4 +153,6 @@ class ImageDeduplication(Visualization):
         print("----------------------------------------\n")
         
     def run(self, obj: ImageDataset):
-        return self.visitImageDataset(obj)
+        if isinstance(obj, ImageDataset):
+            self.visitImageDataset(obj)
+        return

@@ -11,12 +11,17 @@ class ContrastAndBrightness(Visualization):
         self._dataset: ImageDataset | None = None
         self._df: pd.DataFrame | None = None
         self._status: str = "Not Run"
-    def run(self):
+    
+    def run(self, obj: ImageDataset):
         if self._dataset is None:
             self._status = "Failed"
             return
-        self.visitImageDataset(self._dataset)
-        relationship.visualize_brightness_contrast_boxplot(self._df)
+        
+        if isinstance(obj, ImageDataset):
+            self.visitImageDataset(obj)
+            relationship.visualize_brightness_contrast_boxplot(self._df)        
+
+        return
 
     def log(self):
         print("=" * 50)

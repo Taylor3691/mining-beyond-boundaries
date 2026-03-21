@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-
+from core import Object
 
 class Pipeline(ABC):
     @abstractmethod
@@ -11,15 +11,19 @@ class Pipeline(ABC):
         pass
     
 class SubPipeline(Pipeline):
-    def __init__(self):
+    def __init__(self, dataset: Object):
         self._list = []
+        self._children = []
+        self._dataset = dataset
         return
     
     def addService(self, sub: Pipeline):
         self._list.append(sub)
         return
 
-    def run():
+    def run(self):
+        for service in self._list:
+            self._dataset.accept(service)
         return
 
 class Service(Pipeline):

@@ -1,8 +1,8 @@
-from core import Service
+from core import Preprocessing
 from image.dataset import ImageDataset
 
 
-class RemoveDuplication(Service):
+class RemoveDuplication(Preprocessing):
     """
     A service to remove duplicate images from an ImageDataset based on a
     pre-determined set of indices.
