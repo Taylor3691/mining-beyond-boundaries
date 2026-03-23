@@ -26,7 +26,7 @@ def load_images(path: str, image_size = (128,128)):
                 continue
 
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-            img = cv2.resize(img, image_size, interpolation=cv2.INTER_AREA)
+            # img = cv2.resize(img, image_size, interpolation=cv2.INTER_AREA)
             file_name = class_name + "_" + str(count) + item.suffix.lower()
 
             X.append(img)
