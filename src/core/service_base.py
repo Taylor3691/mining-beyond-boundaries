@@ -53,6 +53,7 @@ class Preprocessing(Service):
     def fit_transform():
         pass
 
-class Testing(Service):
-    def __init__(self):
-        return
+class Testing(Service):    
+    @abstractmethod
+    def test():
+        pass
