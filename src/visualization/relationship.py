@@ -38,3 +38,7 @@ def visualize_brightness_contrast_boxplot(df: pd.DataFrame) -> None:
     plt.tight_layout()
     plt.savefig("brightness_contrast_boxplot.png", dpi=150, bbox_inches="tight")
     plt.show()
+
+#  Task 22: Vẽ đường cong SSIM, đầu vào nhận vào mảng các giá trị SSIM
+# trung bình sau khi đã resize, sau đó vẽ line chart (Hoặc một đồ thị đường)
+# cong gì đó theo ý thầy, check thử xem đồ thị đó có phải line chart rồi hãng vẽ

@@ -41,8 +41,17 @@ class Visualization(Service):
     pass
 
 class Preprocessing(Service):
-    def __init__(self):
-        return
+    @abstractmethod
+    def fit():
+        pass
+    
+    @abstractmethod
+    def transform():
+        pass
+
+    @abstractmethod
+    def fit_transform():
+        pass
 
 class Testing(Service):
     def __init__(self):

@@ -37,3 +37,18 @@ CLASS_INDEX = {
 IMAGE_EXTS = {".jpg", ".jpeg", ".png"}
 
 DEFAULT_SIZE = (128,128)
+DEFAULT_NORMALIZATION_METHOD = "minmax_01"
+DEFAULT_EPSILON = 1e-8
+
+SUPPORT_NORMALIZATION_METHOD = (
+    "minmax_01",
+    "minmax_m11",
+    "zscore_global",
+    "zscore_channel",
+    )
+
+SUPPORT_RESIZE = (
+    32,
+    64,
+    128,
+)
