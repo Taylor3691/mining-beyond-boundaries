@@ -9,6 +9,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from core import Preprocessing
 from image import ImageDataset
 from config import SUPPORT_RESIZE
+from visualization.relationship import plot_ssim_curve
 # Task 21: Thực hiện resize ảnh và tính độ đo SSIM và PSNR
 # Hàm SSIM() và hàm PSNR() nhận đầu vào là 2 mảng ảnh trước và sau resize, trả về MẢNG chỉ số khác nhau giữa 2 ảnh cùng index
 # Hàm run() giữ nguyên cấu trúc
@@ -197,7 +198,7 @@ if __name__ == "__main__":
     target_sizes = [128, 64, 32]
     
     # Lưu tất cả kết quả vào biến results_summary 
-    # results_summary = {}
+    results_summary = {}
 
     # Duyệt qua từng size 
     for size in target_sizes:
@@ -212,14 +213,14 @@ if __name__ == "__main__":
         
         # Lưu bộ kết quả 
         if resize_service._status == "Success":
-            #results_summary[size] = {
-            #    "psnr": resize_service.avg_psnr,
-            #    "ssim": resize_service.avg_ssim
-            #}
+            results_summary[size] = {
+                "psnr": resize_service.avg_psnr,
+                "ssim": resize_service.avg_ssim
+            }
             resize_service.log()
         else:
             print(f"Warning: Resize to {size} failed. Check the logs above.")
-            #results_summary[size] = {"psnr": 0.0, "ssim": 0.0}
+            results_summary[size] = {"psnr": 0.0, "ssim": 0.0}
 
     # In ra tất cả kết quả thu đc từ biến results_summary
     #print(f"{'Target Size':<15} | {'Avg PSNR (dB)':<15} | {'Avg SSIM':<10}")
@@ -230,3 +231,9 @@ if __name__ == "__main__":
     #    psnr = res.get("psnr", 0.0)
     #    ssim = res.get("ssim", 0.0)
     #    print(f"{size}x{size:<12} | {psnr:<15.2f} | {ssim:<10.4f}")
+
+    plot_sizes = list(results_summary.keys())
+    plot_ssims = [results_summary[s]["ssim"] for s in plot_sizes]
+
+    # Call the plotting function
+    plot_ssim_curve(sizes=plot_sizes, ssim_scores=plot_ssims)
