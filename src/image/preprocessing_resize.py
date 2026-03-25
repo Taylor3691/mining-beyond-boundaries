@@ -2,6 +2,7 @@ import sys
 import os
 import cv2
 import numpy as np
+import concurrent.futures 
 
 # Đảm bảo Python nhận diện được thư mục gốc
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -38,6 +39,9 @@ class ImageResize(Preprocessing):
         self._status = "Pending"
         self._error_message = ""
         self._metadata = {}
+        
+        # Giới hạn tối đa 16 luồng để tránh tạo quá nhiều biến trong RAM cùng lúc
+        self._max_workers = min(16, (os.cpu_count() or 1) + 4)
 
     @property
     def avg_ssim(self):
@@ -47,7 +51,7 @@ class ImageResize(Preprocessing):
     def avg_psnr(self):
         return self._avg_psnr
 
-    def fit(self, arr: np.ndarray):
+    def fit(self, arr: list):
         """Checks data rồi update metadata cho step"""
         if arr is None or len(arr) == 0:
             raise ValueError("Input array is empty. Cannot fit data.")
@@ -59,75 +63,75 @@ class ImageResize(Preprocessing):
 
     def transform(self, arr: list) -> list:
         """Resize toàn bộ dataset and trả về list chứa data của ảnh đã resized"""
-        resized_arr = []
-        for img in arr:
-            resized = cv2.resize(img, (self._size, self._size), interpolation=cv2.INTER_AREA)
-            resized_arr.append(resized)
-        return resized_arr
+        def _resize_single(img):
+            return cv2.resize(img, (self._size, self._size), interpolation=cv2.INTER_AREA)
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=self._max_workers) as executor:
+            resized_list = list(executor.map(_resize_single, arr))
+            
+        return resized_list
 
     def fit_transform(self, arr: list) -> list:
         """Fit data để lấy metadata, sau đó transforms"""
         self.fit(arr)
         return self.transform(arr)
 
-    def PSNR(self, original_imgs: list, resized_imgs: list) -> list:
+    def PSNR(self, original_imgs: list, resized_imgs: list) -> np.ndarray:
         """Tính chỉ số PSNR giữa ảnh gốc và ảnh đã resized"""
-        psnr_list = []
-        for img1, img2 in zip(original_imgs, resized_imgs):
+        def _calc_single_psnr(o_img, r_img):
+            h, w = o_img.shape[:2]
             # Upscale ảnh đã resized về lại bản gốc để so sánh 1-1 
-            img2_restored = cv2.resize(img2, (img1.shape[1], img1.shape[0]), interpolation=cv2.INTER_CUBIC)
+            r_upscaled = cv2.resize(r_img, (w, h), interpolation=cv2.INTER_CUBIC)
             
-            i1 = img1.astype(np.float64)
-            i2 = img2_restored.astype(np.float64)
+            # Tính PSNR 
+            psnr_val = cv2.PSNR(o_img, r_upscaled)
             
-            mse = np.mean((i1 - i2) ** 2)
-            if mse == 0:
-                psnr_list.append(100.0)
-            else:
-                psnr = 20 * np.log10(255.0) - 10 * np.log10(mse)
-                psnr_list.append(psnr)
-                
-        return psnr_list
+            # Giải phóng bộ nhớ 
+            del r_upscaled 
+            return psnr_val
 
-    def SSIM(self, original_imgs: list, resized_imgs: list) -> list:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=self._max_workers) as executor:
+            psnr_list = list(executor.map(_calc_single_psnr, original_imgs, resized_imgs))
+            
+        return np.array(psnr_list)
+
+    def SSIM(self, original_imgs: list, resized_imgs: list) -> np.ndarray:
         """Tính chỉ số SSIM"""
-        ssim_list = []
         C1 = (0.01 * 255) ** 2
         C2 = (0.03 * 255) ** 2
-        
-        for img1, img2 in zip(original_imgs, resized_imgs):
-            img2_restored = cv2.resize(img2, (img1.shape[1], img1.shape[0]), interpolation=cv2.INTER_CUBIC)
+
+        def _calc_single_ssim(o_img, r_img):
+            h, w = o_img.shape[:2]
+            # Upscale ảnh đã resized về lại bản gốc để so sánh 1-1 
+            r_upscaled = cv2.resize(r_img, (w, h), interpolation=cv2.INTER_CUBIC)
             
-            i1 = img1.astype(np.float64)
-            i2 = img2_restored.astype(np.float64)
+            # Đưa về dải màu xám đen (Grayscale) để đo SSIM chính xác 
+            o_gray = cv2.cvtColor(o_img, cv2.COLOR_RGB2GRAY).astype(np.float64)
+            r_gray = cv2.cvtColor(r_upscaled, cv2.COLOR_RGB2GRAY).astype(np.float64)
             
-            mu1 = np.mean(i1)
-            mu2 = np.mean(i2)
-            var1 = np.var(i1)
-            var2 = np.var(i2)
-            cov12 = np.mean((i1 - mu1) * (i2 - mu2))
+            mu1, mu2 = np.mean(o_gray), np.mean(r_gray)
+            var1, var2 = np.var(o_gray), np.var(r_gray)
+            cov12 = np.mean((o_gray - mu1) * (r_gray - mu2))
             
-            ssim = ((2 * mu1 * mu2 + C1) * (2 * cov12 + C2)) / ((mu1**2 + mu2**2 + C1) * (var1 + var2 + C2))
-            ssim_list.append(ssim)
+            ssim_val = ((2 * mu1 * mu2 + C1) * (2 * cov12 + C2)) / ((mu1**2 + mu2**2 + C1) * (var1 + var2 + C2))
             
-        return ssim_list
+            del r_upscaled, o_gray, r_gray
+            return ssim_val
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=self._max_workers) as executor:
+            ssim_list = list(executor.map(_calc_single_ssim, original_imgs, resized_imgs))
+            
+        return np.array(ssim_list)
 
     def visitImageDataset(self, obj: ImageDataset):
-        """
-        Processes the entire dataset, calculates average SSIM and average PSNR, 
-        and updates the object.
-        """
+        """Thực hiện pipeline chính cho quy trình resize ảnh và tính độ đo SSIM và PSNR"""
         self._dataset_path = obj.folder_path if obj.folder_path else "Unknown Path"
         
         try:
-            # Đảm bảo data đã load 
-            if obj._size == 0:
-                obj.load()
-                
             original_images, labels = obj.images
             
-            if len(original_images) == 0:
-                raise ValueError("Dataset contains no images to resize.")
+            if original_images is None or len(original_images) == 0:
+                raise ValueError("Dataset is empty. Run obj.load() first.")
 
             # Tiến hành resize bằng cách fit và transform 
             resized_images = self.fit_transform(original_images)
@@ -136,12 +140,12 @@ class ImageResize(Preprocessing):
             psnr_array = self.PSNR(original_images, resized_images)
             ssim_array = self.SSIM(original_images, resized_images)
             
-            self._avg_psnr = np.mean(psnr_array)
-            self._avg_ssim = np.mean(ssim_array)
+            self._avg_psnr = float(np.mean(psnr_array))
+            self._avg_ssim = float(np.mean(ssim_array))
 
             # Cập nhật ImageDataset object
             obj.images = list(resized_images)
-            obj._image_size = self._size  # Cập nhật metadata 
+            obj._image_size = (self._size, self._size) # Cập nhật metadata 
             
             self._status = "Success"
             
@@ -178,10 +182,8 @@ class ImageResize(Preprocessing):
         elif self._status == "Failed":
             print(f"5. Error Details   : {self._error_message}")
             print("-" * 85)
-
         print('\n')
 
-# Hàm main này dùng để test kết qủa 
 if __name__ == "__main__":
     #  Load bộ dataset vào RAM
     path = "./data/small" 
@@ -220,6 +222,7 @@ if __name__ == "__main__":
             resize_service.log()
         else:
             print(f"Warning: Resize to {size} failed. Check the logs above.")
+            print(f"[!] LỖI CHI TIẾT: {resize_service._error_message}") 
             results_summary[size] = {"psnr": 0.0, "ssim": 0.0}
 
     # In ra tất cả kết quả thu đc từ biến results_summary
