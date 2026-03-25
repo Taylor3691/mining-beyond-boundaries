@@ -24,7 +24,6 @@ class Normalization(Preprocessing):
         self._method = method
         self._eps = eps
         self._stats : Dict[str, Any] = {}
-        self._status = "Not Started"
         return
     
     @property
@@ -68,10 +67,8 @@ class Normalization(Preprocessing):
             
             # Gán mảng đã chuẩn hóa vào đối tượng dataset
             obj._images = (normalized_images, labels)
-            
-            self._status = "Success"
         except Exception as e:
-            self._status = f"Failed - {e}"
+            print(f"Error: {e}")
         finally:
             self.log()
         return
@@ -79,17 +76,14 @@ class Normalization(Preprocessing):
     def log(self):
         print(f"Method: {self._method}")
         
-        # Chỉ in stats nếu trạng thái là Success và dictionary _stats không rỗng
-        if self._status == "Success" and self._stats:
-            print("Calculated Statistics:")
-            for key, value in self._stats.items():
-                if isinstance(value, np.ndarray):
-                    # Làm tròn để in cho đẹp, chuyển sang list để dễ nhìn
-                    formatted_val = np.round(value, 4).tolist()
-                    print(f"  - {key}: {formatted_val}")
-                else:
-                    # In giá trị scalar (float)
-                    print(f"  - {key}: {value:.4f}")
+        for key, value in self._stats.items():
+            if isinstance(value, np.ndarray):
+                # Làm tròn để in cho đẹp, chuyển sang list để dễ nhìn
+                formatted_val = np.round(value, 4).tolist()
+                print(f"  - {key}: {formatted_val}")
+            else:
+                # In giá trị scalar (float)
+                print(f"  - {key}: {value:.4f}")
         return
     
     def _fit_minmax(self, arr: np.ndarray):
