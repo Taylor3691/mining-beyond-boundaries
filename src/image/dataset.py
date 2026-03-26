@@ -1,6 +1,6 @@
 from core import Object, Service
 from utils import file
-from config import DEFAULT_SIZE, PATH_FOLDER_IMAGE_RAW, BATCH_SIZE, CLASS_INDEX
+from config import DEFAULT_SIZE, PATH_FOLDER_IMAGE_RAW, BATCH_SIZE, CLASS_INDEX, CLASS_NAMES
 
 class ImageDataset(Object):
 
@@ -83,9 +83,20 @@ class ImageDataset(Object):
         return
     """
 
-    def load(self):
-        return file.batch_loader(paths=self._paths, batch_size= BATCH_SIZE)
-    
+    def load(self, class_name: str = None):
+        if class_name is None:
+            return file.batch_loader(paths=self._paths, batch_size=BATCH_SIZE)
+
+        if class_name not in CLASS_NAMES:
+            raise ValueError("Class Name is not defined")
+
+        class_paths = [
+            path for path, label in zip(self._paths, self._labels)
+            if label == CLASS_INDEX[class_name]
+        ]
+
+        return file.batch_loader(paths=class_paths, batch_size=BATCH_SIZE)
+
     def save(self, folder_path: str | None = None, is_classwise: bool= True):
         folder_path = folder_path or self._folder_path
         file.save_images(folder_path, self._images, self._file_names, is_classwise)
