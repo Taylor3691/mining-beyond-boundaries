@@ -1,6 +1,6 @@
 from core import Object, Service
 from utils import file
-from config import DEFAULT_SIZE, PATH_FOLDER_IMAGE_RAW
+from config import DEFAULT_SIZE, PATH_FOLDER_IMAGE_RAW, BATCH_SIZE, CLASS_INDEX
 
 class ImageDataset(Object):
 
@@ -12,10 +12,8 @@ class ImageDataset(Object):
         self._image_size = DEFAULT_SIZE
 
         self._images = []
-        self._class_idx = {}
-        self._labels = []
-        self._paths = []
-        self._file_names = []
+        self._class_idx = CLASS_INDEX
+        self._paths, self._labels, self._file_names = file.load_image_paths(path)
         return
     
     # Getter
@@ -72,16 +70,21 @@ class ImageDataset(Object):
         self._folder_path = value
 
     # Method
+    """ load() version 1
     def load(self):
-        X, Y, class_idx, paths, file_names = file.load_images(path=self._folder_path, image_size= self._image_size)
-        self._images = X
+        Y, class_idx, paths, file_names = file.load_images(path=self._folder_path, image_size= self._image_size)
+        # self._images = X
         self._labels = Y
         self._class_idx = class_idx
         self._paths = paths
-        self._size = len(X)
-        self._shape = (len(X), *X[0].shape)
+        self._size = len(Y)
+        # self._shape = (len(X), *X[0].shape)
         self._file_names = file_names
         return
+    """
+
+    def load(self):
+        return file.batch_loader(paths=self._paths, batch_size= BATCH_SIZE)
     
     def save(self, folder_path: str | None = None, is_classwise: bool= True):
         folder_path = folder_path or self._folder_path
