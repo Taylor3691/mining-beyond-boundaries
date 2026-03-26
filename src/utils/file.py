@@ -6,13 +6,18 @@ import numpy as np
 def batch_loader(paths: list[str], batch_size: int = config.BATCH_SIZE):
     for i in range(0, len(paths), batch_size):
         batch = []
+        index = list(range(i, min(i + batch_size, len(paths))))
 
         for j in range(i, min(i + batch_size, len(paths))):
             img = cv2.imread(paths[j], cv2.IMREAD_COLOR)
+
+            if img is None:
+                continue
+
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             batch.append(img)
-            index = list(range(i, min(i + batch_size, len(paths))))
         
+        index = list(range(i, min(i + batch_size, len(paths))))
         yield batch, index
     return
 
