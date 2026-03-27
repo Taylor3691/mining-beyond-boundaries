@@ -4,9 +4,6 @@ import cv2
 import numpy as np
 import concurrent.futures 
 
-# Đảm bảo Python nhận diện được thư mục gốc
-# sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
 from config import PATH_FOLDER_IMAGE_TEST 
 from core.service_base import Preprocessing
 from image.dataset import ImageDataset
@@ -90,8 +87,6 @@ class ImageResize(Preprocessing):
             total_ssim_scores = []
             all_resized_images = []
             
-            print(f"[*] Đang nạp dữ liệu từ generator và xử lý đa luồng...")
-            
             # Lặp qua từng batch dữ liệu thay vì load toàn bộ
             for batch_imgs, batch_indices in obj.load():
                 if not batch_imgs:
@@ -110,9 +105,6 @@ class ImageResize(Preprocessing):
                 
                 # Gom ảnh đã resize (Lưu ý: Lưu toàn bộ ảnh vào RAM)
                 all_resized_images.extend(resized_batch)
-
-            if not all_resized_images:
-                raise ValueError("Không tìm thấy ảnh hợp lệ để xử lý!")
 
             # Tính trung bình toàn bộ Dataset
             self._avg_psnr = float(np.mean(total_psnr_scores))
@@ -152,6 +144,7 @@ class ImageResize(Preprocessing):
         print("="*50 + "\n")
 
 
+# Hamf main dung de testttttt
 if __name__ == "__main__":
     original_dataset = ImageDataset(path=PATH_FOLDER_IMAGE_TEST)
     
@@ -186,11 +179,10 @@ if __name__ == "__main__":
             print(f"Warning: Resize to {size} failed. Check the logs above.")
             results_summary[size] = {"psnr": 0.0, "ssim": 0.0}
 
-    # Vẽ biểu đồ 
+    # Vẽ biểu đồ SSIM Curve
     plot_sizes = list(results_summary.keys())
     plot_ssims = [results_summary[s]["ssim"] for s in plot_sizes]
     
-    print("Vẽ biểu đồ SSIM Curve...")
     try:
         plot_ssim_curve(sizes=plot_sizes, ssim_scores=plot_ssims)
     except Exception as e:
