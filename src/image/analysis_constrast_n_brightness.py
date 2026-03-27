@@ -43,41 +43,45 @@ class ContrastAndBrightness(Visualization):
     # Service interface                                                    #
     # ------------------------------------------------------------------ #
     def visitImageDataset(self, obj: ImageDataset):
-        """
-        Task 15 — Tính brightness & contrast từng ảnh theo lớp.
-
-        Công thức:
-            gray       = 0.299·R + 0.587·G + 0.114·B   (ITU-R BT.601)
-            brightness = mean(gray)   ∈ [0, 255]
-            contrast   = std(gray)    ∈ [0, 127.5]
-        """
         try:
-            images, labels = obj.images
-            idx_to_class   = {v: k for k, v in obj.class_idx.items()}
-
+            # Map index sang tên class để hiển thị
+            idx_to_class = {v: k for k, v in obj.class_idx.items()}
             records = []
-            for img, label in zip(images, labels):
-                gray = (
-                    0.299 * img[:, :, 0].astype(np.float32)
-                  + 0.587 * img[:, :, 1].astype(np.float32)
-                  + 0.114 * img[:, :, 2].astype(np.float32)
-                )
-                records.append({
-                    "class_name": idx_to_class.get(int(label), str(label)),
-                    "brightness": float(np.mean(gray)),
-                    "contrast"  : float(np.std(gray)),
-                })
 
+            # GỌI HÀM LOAD THEO BATCH
+            # batch_images: list các ma trận ảnh
+            # batch_indices: list các vị trí tương ứng trong obj._labels
+            for batch_images, batch_indices in obj.load():
+                
+                for img, idx in zip(batch_images, batch_indices):
+                    # Lấy nhãn thực tế dựa trên index trả về từ loader
+                    label_val = obj._labels[idx]
+                    class_name = idx_to_class.get(int(label_val), str(label_val))
+
+                    # Tính toán Gray scale bằng Vectorization (Nhanh hơn)
+                    gray = np.dot(img[..., :3], [0.299, 0.587, 0.114]).astype(np.float32)
+                    
+                    records.append({
+                        "class_name": class_name,
+                        "brightness": float(np.mean(gray)),
+                        "contrast"  : float(np.std(gray)),
+                    })
+
+            # Kiểm tra nếu không có dữ liệu
+            if not records:
+                self._status = "Failed — No images loaded"
+                return
+
+            # Tạo DataFrame từ list kết quả
             self._df = pd.DataFrame(records, columns=["class_name", "brightness", "contrast"])
 
-            # Tính stats per class: mean, var, median, IQR, n_outliers
+            # Tính toán thống kê (giữ nguyên hàm _compute_stats của bạn)
             self._stats = self._compute_stats(self._df)
-
             self._dataset = obj
             self._status  = "Success"
 
         except Exception as e:
-            self._status = f"Failed — {e}"
+            self._status = f"Failed — {str(e)}"
 
     # ------------------------------------------------------------------ #
     # Internal helpers                                                     #
