@@ -75,6 +75,12 @@ class RemoveDuplication(Preprocessing):
             new_size = len(obj._paths)
             obj._size = new_size
             
+            if hasattr(obj, '_shape') and isinstance(obj._shape, tuple) and len(obj._shape) == 4:
+                obj._shape = (new_size, obj._shape[1], obj._shape[2], obj._shape[3])
+            elif hasattr(obj, '_shape') and len(obj._shape) == 0:
+                # Trường hợp shape đang là (0,0,0,0) do init
+                pass
+            
             self._removed_count = initial_count - new_size
             self._status = "Success"
             
