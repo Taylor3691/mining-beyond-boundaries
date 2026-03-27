@@ -3,48 +3,46 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-def load_images(path: str, image_size=None):
+def batch_loader(paths: list[str], batch_size: int = config.BATCH_SIZE):
+    for i in range(0, len(paths), batch_size):
+        batch = []
+        index = list(range(i, min(i + batch_size, len(paths))))
+
+        for j in range(i, min(i + batch_size, len(paths))):
+            img = cv2.imread(paths[j], cv2.IMREAD_COLOR)
+
+            if img is None:
+                continue
+
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            batch.append(img)
+        
+        index = list(range(i, min(i + batch_size, len(paths))))
+        yield batch, index
+    return
+
+def load_image_paths(path: str):
     root = Path(path)
     class_names = config.CLASS_NAMES
-    class_to_idx = config.CLASS_INDEX
+    class_idx = config.CLASS_INDEX
+    paths, labels, filenames = [], [], []
 
-    X, Y, file_names, paths = [], [], [], []
     exts = config.IMAGE_EXTS
-    
-    printed_original_size = False
-
     for class_name in class_names:
-        count = 0
         class_dir = root / class_name
+        count = 0
         if not class_dir.exists():
             continue
 
         for item in class_dir.rglob("*"):
-            if item.suffix.lower() not in exts:
+            if item.suffix.lower() not in exts :
                 continue
-
-            img = cv2.imread(str(item))
-            if img is None:
-                continue
-            if not printed_original_size:
-                height, width, channels = img.shape
-                # print(f"Kích thước ảnh gốc (Mẫu đầu tiên): {width}x{height} pixels, {channels} kênh màu")
-                printed_original_size = True
-
-            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-            # img = cv2.resize(img, image_size, interpolation=cv2.INTER_AREA)
-            file_name = class_name + "_" + str(count) + item.suffix.lower()
-
-            X.append(img)
-            Y.append(class_to_idx[class_name])
-            file_names.append(str(file_name))
             paths.append(str(item))
+            labels.append(class_idx[class_name])
+            filenames.append(class_name + "_" + str(count) + item.suffix.lower())
+            count+=1
 
-            count += 1
-
-    Y = np.array(Y, dtype=np.int64)
-    
-    return X, Y, class_to_idx, paths, file_names
+    return paths, labels, filenames
 
 def load_table(path: str):
     return
