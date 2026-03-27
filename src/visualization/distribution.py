@@ -1,9 +1,10 @@
 import matplotlib.pyplot as plt
 import seaborn as sns
+import numpy as np
 
+# ==========================================
 # Task 11: Kiểm tra Imbalance
-import matplotlib.pyplot as plt
-
+# ==========================================
 def plot_class_distribution(class_names: list, counts: list):
     """
     Hàm vẽ Bar Chart so sánh số lượng ảnh giữa các lớp:
@@ -61,9 +62,11 @@ def plot_class_distribution(class_names: list, counts: list):
     print(f"\n[Visualizer] Chart successfully saved at: {output_file}")
     
     plt.show()
+    plt.close()
 
-# Task 8
-
+# ==========================================
+# Task 8: Phân tích phân phối Pixel (Histogram & KDE)
+# ==========================================
 def plot_histogram(pixel_data, title_suffix=""):
     """
     Vẽ biểu đồ Histogram. 
@@ -99,7 +102,12 @@ def plot_kde(pixel_data, title_suffix=""):
     labels = ['Red', 'Green', 'Blue']
     
     for i in range(3):
-        sns.kdeplot(pixel_data[:, i], color=colors[i], fill=True, alpha=0.3, ax=axes[i], linewidth=2)
+        # Subsample để vẽ KDE nhanh hơn nếu dữ liệu quá lớn
+        data_to_plot = pixel_data[:, i]
+        if len(data_to_plot) > 100000:
+            data_to_plot = np.random.choice(data_to_plot, 100000, replace=False)
+
+        sns.kdeplot(data_to_plot, color=colors[i], fill=True, alpha=0.3, ax=axes[i], linewidth=2)
         axes[i].set_title(f"{labels[i]} Channel", fontsize=13, color=colors[i])
         axes[i].set_xlabel('Giá trị Pixel (0 - 255)', fontsize=12)
         axes[i].grid(axis='y', alpha=0.3, linestyle='--')
@@ -107,5 +115,54 @@ def plot_kde(pixel_data, title_suffix=""):
     axes[0].set_ylabel('Mật độ phân phối', fontsize=12)
     
     plt.tight_layout()
+    plt.show()
+    plt.close()
+
+def plot_distribution_by_class(images, labels, class_names, title_suffix=""):
+    """
+    Vẽ KDE plot cho từng class để so sánh sự khác biệt phân phối màu sắc giữa các lớp.
+    
+    Args:
+        images (numpy.ndarray): Tập ảnh dạng (N, H, W, 3).
+        labels (numpy.ndarray/list): Nhãn của từng ảnh (dạng số nguyên từ 0 đến num_classes-1).
+        class_names (list): Danh sách tên các lớp tương ứng.
+        title_suffix (str): Hậu tố thêm vào tiêu đề.
+    """
+    fig, axes = plt.subplots(1, 3, figsize=(20, 6), sharey=True)
+    fig.suptitle(f'Color Distribution Comparison by Class (KDE) {title_suffix}', fontsize=16, fontweight='bold')
+    
+    channels = ['Red Channel', 'Green Channel', 'Blue Channel']
+    labels_arr = np.array(labels)
+    
+    # Tạo dải màu (colormap) để phân biệt các class dễ dàng hơn
+    cmap = plt.get_cmap('tab10')
+
+    for i in range(3):
+        for class_idx, class_name in enumerate(class_names):
+            # Lọc các ảnh thuộc class hiện tại
+            class_mask = (labels_arr == class_idx)
+            class_images = images[class_mask]
+            
+            if len(class_images) > 0:
+                # Trích xuất kênh màu thứ i và phẳng hóa (flatten)
+                channel_data = class_images[:, :, :, i].flatten()
+                
+                # TỐI ƯU HIỆU NĂNG: Lấy mẫu ngẫu nhiên 50,000 pixel để vẽ KDE không bị treo máy
+                if len(channel_data) > 50000:
+                    channel_data = np.random.choice(channel_data, 50000, replace=False)
+                
+                sns.kdeplot(channel_data, ax=axes[i], label=class_name, linewidth=1.5, color=cmap(class_idx % 10))
+        
+        axes[i].set_title(channels[i], fontsize=13)
+        axes[i].set_xlabel('Giá trị Pixel (0 - 255)', fontsize=12)
+        axes[i].grid(axis='y', alpha=0.3, linestyle='--')
+        
+        # Chỉ hiển thị chú thích (legend) ở biểu đồ giữa cho gọn
+        if i == 1:
+            axes[i].legend(title='Classes', bbox_to_anchor=(0.5, -0.15), loc='upper center', ncol=len(class_names)//2 + 1)
+
+    axes[0].set_ylabel('Mật độ phân phối', fontsize=12)
+    plt.tight_layout()
+    plt.subplots_adjust(bottom=0.25) # Chừa khoảng trống phía dưới cho legend
     plt.show()
     plt.close()
