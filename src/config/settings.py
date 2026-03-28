@@ -1,4 +1,5 @@
 from pathlib import Path
+import cv2
 
 
 # Resolve project paths relative to the package location.
@@ -58,7 +59,13 @@ SUPPORT_RESIZE = (
 SUPPORT_COLOR_SPACE = (
     "HSV",
     "RGB",
-    "CMY",
     "LAB",
     "Grayscale",
 )
+
+COLOR_MAP = {
+    "RGB": None,
+    "HSV": cv2.COLOR_RGB2HSV,
+    "LAB": cv2.COLOR_RGB2LAB,
+    "Grayscale": cv2.COLOR_RGB2GRAY,
+}
