@@ -1,5 +1,7 @@
 import matplotlib.pyplot as plt
 import cv2
+import seaborn as sns
+import numpy as np
 
 def plot_deduplicate_comparison(initial_count, final_count):
     """
@@ -60,5 +62,43 @@ def plot_phash_comparison(img1, img2, hash1, hash2, distance, title="pHash Compa
     axes[1].set_title(f"Transformed / Side B\nHash: {hash2}", fontsize=9, family='monospace')
     axes[1].axis('off')
     
+    plt.tight_layout()
+    plt.show()
+
+def plot_normalization_comparison(img_orig: np.ndarray, img_norm: np.ndarray, method_name: str):
+    fig, axes = plt.subplots(2, 3, figsize=(18, 10))
+    
+    h, w = img_orig.shape[:2]
+    cy, cx = h // 2, w // 2
+    
+    # histogram với heatmap dùng channel red
+    patches = [img_orig[cy-5:cy+5, cx-5:cx+5, 0], img_norm[cy-5:cy+5, cx-5:cx+5, 0]]
+    hist_data = [img_orig[:,:,0].flatten(), img_norm[:,:,0].flatten()]
+    
+    img_norm_disp = (img_norm - img_norm.min()) / (img_norm.max() - img_norm.min() + 1e-8)
+    images_disp = [img_orig, img_norm_disp]
+    
+    is_diverging = img_norm.min() < 0
+    titles = ["Original", f"Normalized ({method_name})"]
+
+    for i in range(2):
+        # ảnh gốc
+        axes[i, 0].imshow(images_disp[i])
+        axes[i, 0].set_title(f"{titles[i]} Image")
+        axes[i, 0].axis('off')
+
+        # histogram
+        sns.histplot(hist_data[i], bins=50, kde=(i==1), 
+                     color='gray' if i==0 else 'blue', ax=axes[i, 1])
+        axes[i, 1].set_title(f"{titles[i]} Distribution (Channel 0)")
+
+        # heatmap
+        sns.heatmap(patches[i], annot=True, fmt=".0f" if i==0 else ".3f", 
+                    cmap="Blues" if i==0 else ("coolwarm" if is_diverging else "viridis"), 
+                    center=0 if (i==1 and is_diverging) else None,
+                    ax=axes[i, 2], cbar=True)
+        axes[i, 2].set_title(f"{titles[i]} ROI (Center 10x10)")
+
+    plt.suptitle(f"Method: {method_name}", fontsize=16, fontweight='bold', y=1.02)
     plt.tight_layout()
     plt.show()
