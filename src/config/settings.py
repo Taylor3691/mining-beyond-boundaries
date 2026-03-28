@@ -53,3 +53,11 @@ SUPPORT_RESIZE = (
     64,
     128,
 )
+
+SUPPORT_COLOR_SPACE = (
+    "HSV",
+    "RGB",
+    "CMY",
+    "LAB",
+    "Grayscale",
+)
