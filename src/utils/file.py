@@ -22,8 +22,29 @@ def batch_loader(paths: list[str], batch_size: int = config.BATCH_SIZE):
     return
 
 def load_image_paths(path: str):
+def batch_loader(paths: list[str], batch_size: int = config.BATCH_SIZE):
+    for i in range(0, len(paths), batch_size):
+        batch = []
+        index = list(range(i, min(i + batch_size, len(paths))))
+
+        for j in range(i, min(i + batch_size, len(paths))):
+            img = cv2.imread(paths[j], cv2.IMREAD_COLOR)
+
+            if img is None:
+                continue
+
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            batch.append(img)
+        
+        index = list(range(i, min(i + batch_size, len(paths))))
+        yield batch, index
+    return
+
+def load_image_paths(path: str):
     root = Path(path)
     class_names = config.CLASS_NAMES
+    class_idx = config.CLASS_INDEX
+    paths, labels, filenames = [], [], []
     class_idx = config.CLASS_INDEX
     paths, labels, filenames = [], [], []
 
@@ -34,6 +55,7 @@ def load_image_paths(path: str):
     for class_name in class_names:
         class_dir = root / class_name
         count = 0
+        count = 0
         if not class_dir.exists():
             continue
 
@@ -43,8 +65,11 @@ def load_image_paths(path: str):
             paths.append(str(item))
             labels.append(class_idx[class_name])
             filenames.append(class_name + "_" + str(count) + item.suffix.lower())
+            labels.append(class_idx[class_name])
+            filenames.append(class_name + "_" + str(count) + item.suffix.lower())
             count+=1
 
+    return paths, labels, filenames
     return paths, labels, filenames
 
 def load_table(path: str):
@@ -66,4 +91,3 @@ def save_images(path: str, images: np.ndarray, file_names: list[str], is_classwi
 
 def save_table(path: str):
     return
-
