@@ -116,7 +116,7 @@ class ImageDataset(Object):
         return
     
     def clone(self):
-        dataset_clone = ImageDataset(None)
+        dataset_clone = ImageDataset(self._folder_path)
         dataset_clone._folder_path = self._folder_path
         dataset_clone._size = self._size
         dataset_clone._shape = self._shape

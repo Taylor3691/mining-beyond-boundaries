@@ -2,6 +2,10 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+import matplotlib
+matplotlib.use('Agg')
+import numpy as np
+
 def visualize_brightness_contrast_boxplot(df: pd.DataFrame) -> None:
     """
     Vẽ boxplot độ sáng và độ tương phản theo từng lớp.
@@ -42,3 +46,50 @@ def visualize_brightness_contrast_boxplot(df: pd.DataFrame) -> None:
 #  Task 22: Vẽ đường cong SSIM, đầu vào nhận vào mảng các giá trị SSIM
 # trung bình sau khi đã resize, sau đó vẽ line chart (Hoặc một đồ thị đường)
 # cong gì đó theo ý thầy, check thử xem đồ thị đó có phải line chart rồi hãng vẽ
+def plot_ssim_curve(sizes: list, ssim_scores: list, save_path: str = "ssim_vs_size_curve.png"):
+    """
+    Vẽ đồ thị đường (Line Chart) thể hiện mối liên hệ giữa kích thước và chỉ số SSIM 
+    """
+    if len(sizes) != len(ssim_scores) or len(sizes) == 0:
+        print("[Visualizer Error] Sizes and SSIM scores lists must have the same length and cannot be empty.")
+        return
+
+    # Sắp xếp size để đường vẽ chạy từ trái sang phải (32 -> 64 -> 128)
+    sorted_pairs = sorted(zip(sizes, ssim_scores))
+    sorted_sizes = [pair[0] for pair in sorted_pairs]
+    sorted_ssim = [pair[1] for pair in sorted_pairs]
+
+    plt.figure(figsize=(9, 6))
+    
+    # Vẽ Line Chart
+    plt.plot(sorted_sizes, sorted_ssim, marker='o', linestyle='-', color='royalblue', 
+             linewidth=2.5, markersize=8, label='SSIM Trend')
+
+    # Tính toán khoảng đệm trục Y động để ghi chú text không bị dính vào điểm vẽ
+    y_min, y_max = min(sorted_ssim), max(sorted_ssim)
+    y_range = y_max - y_min if y_max != y_min else 0.1
+    text_offset = y_range * 0.05  # Nâng text lên 5% của tổng chiều cao trục Y
+
+    # Ghi chú giá trị SSIM
+    for x, y in zip(sorted_sizes, sorted_ssim):
+        plt.text(x, y + text_offset, f"{y:.4f}", 
+                 ha='center', va='bottom', fontsize=11, fontweight='bold', color='darkblue')
+
+    plt.title("Relationship Between Image Resize Dimension and SSIM", fontsize=15, pad=15)
+    plt.xlabel("Target Image Size (NxN Pixels)", fontsize=12)
+    plt.ylabel("Average SSIM Score (0.0 - 1.0)", fontsize=12)
+    
+    # Hiển thị text trực quan hơn ở trục X 
+    plt.xticks(sorted_sizes, labels=[f"{s}x{s}" for s in sorted_sizes])
+    
+    # Giới hạn trục Y
+    padding = y_range * 0.15
+    plt.ylim(y_min - padding, y_max + padding * 2)
+
+    plt.grid(True, linestyle='--', alpha=0.6)
+    plt.legend(loc="lower right")
+    plt.tight_layout()
+
+    # Lưu biểu đồ
+    plt.savefig(save_path, dpi=300)
+    print(f"\n[Visualizer] SSIM relationship curve successfully saved at: {save_path}")
