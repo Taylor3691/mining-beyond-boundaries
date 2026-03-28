@@ -1,19 +1,34 @@
 from core import DistributionTesting
 from image import ImageDataset
+import numpy as np
+from scipy import stats
 
 class KolmogorovSmirnovTesting(DistributionTesting):
-    def __init__(self):
-        # Khởi tạo các metadata cần thiết
-        return
+    def __init__(self, alpha=0.05):
+        self.step_name = "Distribution Consistency Check"
+        self.test_name = "Kolmogorov-Smirnov Test"
+        self.alpha = alpha
+        self.h0_hypothesis = "Hai tập dữ liệu (Gốc và Đã xử lý) có cùng phân phối xác suất."
+        
+        self.statistic = None
+        self.p_value = None
+        self.conclusion = ""
+        self.is_rejected = False
 
     def visitImageDataset(self, obj: ImageDataset):
-        # Logic chính thực hiện 
-        # Chuẩn bị dữ liệu ở đây hoặc define thêm hàm cbi
-        #  dữ liệu
-        # Dữ liệu ở đây là dạng ảnh, nên cần làm flattern nếu cần
-        # Mặc dataset đã có 2 biến là self._orgin_images và _processed_images
-        # là 2 mảng các ảnh, ông xử lý trên các mảng này
-        # Nếu không có 2 attribute này thì rasie Error  
+        # check attribute, nếu không có thì raise lỗi
+        if not hasattr(obj, '_origin_images') or not hasattr(obj, '_processed_images'):
+            raise AttributeError("ImageDataset phải có thuộc tính '_origin_images' và '_processed_images'")
+
+        # flatten ảnh
+        try:
+            data_orig_flat = np.concatenate(obj._origin_images).flatten()
+            data_proc_flat = np.concatenate(obj._processed_images).flatten()
+        except Exception as e:
+            raise ValueError(f"Lỗi khi xử lý mảng ảnh: {e}")
+
+        # test
+        self.test(data_orig_flat, data_proc_flat)
         return
     
     def run(self, obj: ImageDataset):
@@ -22,17 +37,29 @@ class KolmogorovSmirnovTesting(DistributionTesting):
         return 
     
     def log(self):
-        # Thực hiện trình bày được các thông tin sau
-        # 1. Tên step
-        # 2. Tên kiểm định 
-        # 3. Giả thuyết H0
-        # 4: Kết quả trả về có p-value
-        # 5: Kết luận bác bỏ hoặc chấp nhận H0
-        # 6: Kết luận và nhắc lại giả thuyết H0 nếu chấp nhận ngược lại
+        print(f"Step: {self.step_name}")
+        print(f"Kiểm định: {self.test_name}")
+        print(f"Giả thuyết H0: {self.h0_hypothesis}")
+        
+        print(f"P-value: {self.p_value:.10f}")
+        print(f"Statistic: {self.statistic:.6f}")
+            
+        if self.is_rejected:
+            print(f"Kết luận: {self.conclusion}.")
+            print(f"Thống kê cho thấy việc xử lý ảnh đã làm thay đổi bản chất phân phối dữ liệu (p <= {self.alpha}).")
+        else:
+            print(f"Kết luận: {self.conclusion}.")
+            print(f"{self.h0_hypothesis}")
         return
-    
-    def test(self):
-        # Nhận vào 2 mảng dữ liệu phẳng là 2 phân phối
-        # Thực hiện gọi thư viện spciy để kiểm định
-        # Nếu cần thiết thì có thể tạo thêm các metadata khác trả về 
-        return
+            
+    def test(self, data_orig: np.ndarray, data_proc: np.ndarray):
+        # stats.ks_2samp trả về (ks_statistic, p_value)
+        self.statistic, self.p_value = stats.ks_2samp(data_orig, data_proc)
+        
+        # Đánh giá dựa trên alpha
+        self.is_rejected = self.p_value <= self.alpha
+        if self.is_rejected:
+            self.conclusion = "Bác bỏ giả thuyết H0"
+        else:
+            self.conclusion = "Chấp nhận giả thuyết H0"
+        return self.statistic, self.p_value
