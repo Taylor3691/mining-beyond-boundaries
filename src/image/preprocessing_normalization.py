@@ -58,27 +58,24 @@ class Normalization(Preprocessing):
             self.visitImageDataset(obj)
         return
     
-    def visitImageDataset(self, obj):
+    def visitImageDataset(self, obj: ImageDataset):
         try:
-            normalized_images = []
+            images, labels = obj.images
             
-            # duyệt qua từng batch ảnh rồi chuẩn hóa, thêm vào danh sách mới
-            for batch_images, _ in obj.load():
-                for img in batch_images:
-                    normalized_images.append(self.fit_transform(img))
-                    
-            obj.images = normalized_images
-            self._status = "Success"
+            # chuẩn hóa ảnh
+            normalized_images = self.fit_transform(images)
             
+            # Gán mảng đã chuẩn hóa vào đối tượng dataset
+            obj._images = (normalized_images, labels)
         except Exception as e:
-            self._status = f"Failed - {e}"
+            print(f"Error: {e}")
         finally:
             self.log()
-            
         return
 
     def log(self):
         print(f"Method: {self._method}")
+        
         for key, value in self._stats.items():
             if isinstance(value, np.ndarray):
                 # Làm tròn để in cho đẹp, chuyển sang list để dễ nhìn
