@@ -26,8 +26,6 @@ def load_image_paths(path: str):
     class_names = config.CLASS_NAMES
     class_idx = config.CLASS_INDEX
     paths, labels, filenames = [], [], []
-    class_idx = config.CLASS_INDEX
-    paths, labels, filenames = [], [], []
 
     exts = config.IMAGE_EXTS
     
