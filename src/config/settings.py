@@ -39,6 +39,7 @@ IMAGE_EXTS = {".jpg", ".jpeg", ".png"}
 DEFAULT_SIZE = (128,128)
 DEFAULT_NORMALIZATION_METHOD = "minmax_01"
 DEFAULT_EPSILON = 1e-8
+DEFAULT_N_COMPONENTS = 50
 
 SUPPORT_NORMALIZATION_METHOD = (
     "minmax_01",
@@ -51,4 +52,12 @@ SUPPORT_RESIZE = (
     32,
     64,
     128,
+)
+
+SUPPORT_COLOR_SPACE = (
+    "HSV",
+    "RGB",
+    "CMY",
+    "LAB",
+    "Grayscale",
 )
