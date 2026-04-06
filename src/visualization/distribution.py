@@ -168,3 +168,23 @@ def plot_distribution_by_class(images, labels, class_names, title_suffix=""):
     plt.subplots_adjust(bottom=0.25) # Chừa khoảng trống phía dưới cho legend
     plt.show()
     plt.close()
+# ==========================================
+# Task 10-Module 2: Phân tích phân phối dữ liệu (Histogram & KDE)
+# ==========================================
+
+def plot_column_distribution(data_series: np.ndarray, column_name: str, test_name: str = ""):
+    """
+    Trực quan hóa phân phối của một cột dữ liệu số bằng Histogram kết hợp đường KDE.
+    """
+    plt.figure(figsize=(10, 6))
+    
+    # Vẽ biểu đồ phân phối
+    sns.histplot(data_series, kde=True, color='royalblue', bins=30, stat="density", linewidth=0)
+    
+    plt.title(f"Phân phối dữ liệu: {column_name} \n(Trước kiểm định {test_name})", fontsize=14, pad=15)
+    plt.xlabel(f"Giá trị của {column_name}", fontsize=12)
+    plt.ylabel("Mật độ (Density)", fontsize=12)
+    plt.grid(axis='y', linestyle='--', alpha=0.7)
+    
+    plt.tight_layout()
+    plt.show()
