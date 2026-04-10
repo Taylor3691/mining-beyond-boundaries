@@ -4,7 +4,7 @@ import seaborn as sns
 
 def plot_color_space_evaluation(results: list, save_path: str = "color_space_eval.png"):
     """
-    Vẽ biểu đồ kép so sánh Phương sai giải thích và F1-Score giữa các không gian màu.
+    Vẽ biểu đồ kép so sánh phương sai giải thích và F1-Score giữa các không gian màu.
     """
     if not results:
         print("[Visualizer Error] Danh sách kết quả rỗng.")

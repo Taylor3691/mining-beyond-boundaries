@@ -12,15 +12,16 @@ from sklearn.model_selection import train_test_split
 from sklearn.decomposition import IncrementalPCA
 
 class Normalization(Preprocessing):
-    def __init__(self, method: str = DEFAULT_NORMALIZATION_METHOD, eps: float = DEFAULT_EPSILON):
+    def __init__(self,
+                 method: str = DEFAULT_NORMALIZATION_METHOD,
+                 eps: float = DEFAULT_EPSILON
+                 ):
         if method not in SUPPORT_NORMALIZATION_METHOD:
             raise ValueError("Method not support")
         
         self._method = method
         self._eps = eps
         self._stats : Dict[str, Any] = {}
-        self._transformed_data_cache = None 
-        self._raw_uint8_cache = None
         return
     
     @property
@@ -50,13 +51,36 @@ class Normalization(Preprocessing):
         self.fit(arr)
         return self.transform(arr)
 
+    def run(self, obj: ImageDataset):
+        if isinstance(obj, ImageDataset):
+            self.visitImageDataset(obj)
+        return
+    
+    def visitImageDataset(self, obj: ImageDataset):
+        try:
+            images, labels = obj.images
+            
+            # chuẩn hóa ảnh
+            normalized_images = self.fit_transform(images)
+            
+            # Gán mảng đã chuẩn hóa vào đối tượng dataset
+            obj._images = (normalized_images, labels)
+        except Exception as e:
+            print(f"Error: {e}")
+        finally:
+            self.log()
+        return
+
     def log(self):
         print(f"Method: {self._method}")
+        
         for key, value in self._stats.items():
             if isinstance(value, np.ndarray):
+                # Làm tròn để in cho đẹp, chuyển sang list để dễ nhìn
                 formatted_val = np.round(value, 4).tolist()
                 print(f"  - {key}: {formatted_val}")
             else:
+                # In giá trị scalar (float)
                 print(f"  - {key}: {value:.4f}")
         return
     
@@ -73,46 +97,54 @@ class Normalization(Preprocessing):
         return
     
     def _fit_zscore_channel(self, arr: np.ndarray):
+        # tính stats cho từng channel
         arr_float = arr.astype(np.float32)
+        # lấy tất cả các trục trừ trục cuối cùng (channel), vd: (N,H,W,C), (H,W,C)
         axes = tuple(range(arr_float.ndim - 1))
         self._stats['mean'] = np.mean(arr_float, axis=axes)
         self._stats['std'] = np.std(arr_float, axis=axes)
         return
     
     def _transform_minmax_01(self, arr: np.ndarray):
+        # công thức: (x - min) / (max - min)
         arr_float = arr.astype(np.float32)
         min_val = self._stats['min']
         max_val = self._stats['max']
         return (arr_float - min_val) / (max_val - min_val + self._eps)
     
     def _transform_minmax_m11(self, arr: np.ndarray):
+        # công thức range bất kì : ((x - min) / (max - min)) * (max_range - min_range) - 1
         arr_float = arr.astype(np.float32)
         min_val = self._stats['min']
         max_val = self._stats['max']
         return 2 * (arr_float - min_val) / (max_val - min_val + self._eps) - 1
 
     def _transform_zscore_global(self, arr: np.ndarray):
+        # công thức: (x - mean) / std với mean, std tính trên toàn bộ ảnh
         arr_float = arr.astype(np.float32)
         mean = self._stats['mean']
         std = self._stats['std']
         return (arr_float - mean) / (std + self._eps)
     
     def _transform_zscore_channel(self, arr: np.ndarray):
+        # công thức: (x - mean) / std với mean, std tính trên từng channel
         arr_float = arr.astype(np.float32)
         mean = self._stats['mean']
         std = self._stats['std']
         return (arr_float - mean) / (std + self._eps)
-        
-    def run(self, obj: ImageDataset):
-        if isinstance(obj, ImageDataset):
-            self.visitImageDataset(obj)
-        return
 
-    # =========================================================================
-    # CÁC HÀM TỐI ƯU HÓA RAM MỚI BẰNG CHUNKING TOÁN HỌC
-    # =========================================================================
+class NormalizationEvaluator(Normalization):
+    """
+    Class kế thừa từ Normalization gốc.
+    Bổ sung các tính năng chống tràn RAM (Chunking), xuất file ảnh và đánh giá SGDClassifier.
+    """
+    def __init__(self, method: str = DEFAULT_NORMALIZATION_METHOD, eps: float = DEFAULT_EPSILON):
+        super().__init__(method=method, eps=eps)
+        self._transformed_data_cache = None 
+        self._raw_uint8_cache = None
 
     def visitImageDataset(self, obj: ImageDataset):
+        """Ghi đè hàm visit để dùng kỹ thuật toán học Chunking chống OOM"""
         try:
             print(f"   [INFO] Kích hoạt Chế độ Chống Tràn RAM (Toán học Chunking)...")
             total_images = len(obj._file_names)
@@ -222,11 +254,10 @@ class Normalization(Preprocessing):
         for i in range(n_repeats):
             X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=i*42)
             
-            # CẢI TIẾN: Dùng adaptive learning rate để tìm đáy tốt hơn (F1 cao hơn)
             model = SGDClassifier(
                 loss='log_loss', 
                 learning_rate='adaptive', 
-                eta0=0.01, # Bước nhảy ban đầu
+                eta0=0.01,
                 early_stopping=False,
                 random_state=i*42, 
                 n_jobs=-1
@@ -235,7 +266,6 @@ class Normalization(Preprocessing):
             epoch_accs = []
             for epoch in range(max_epochs):
                 model.partial_fit(X_train, y_train, classes=classes)
-                # Tính độ chính xác trên Test set để vẽ đường cong
                 acc = model.score(X_test, y_test)
                 epoch_accs.append(acc)
             
