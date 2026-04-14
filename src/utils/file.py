@@ -2,6 +2,7 @@ import config
 from pathlib import Path
 import cv2
 import numpy as np
+import pandas as pd 
 
 def batch_loader(paths: list[str], batch_size: int = config.BATCH_SIZE):
     for i in range(0, len(paths), batch_size):
@@ -46,8 +47,17 @@ def load_image_paths(path: str):
 
     return paths, labels, filenames
 
+"""
 def load_table(path: str):
     return
+"""
+
+def load_table(path: str) -> pd.DataFrame:
+    try:
+        return pd.read_csv(path, low_memory=False) 
+    except Exception as e:
+        print(f"Lỗi khi đọc file {path}: {e}")
+        return None
 
 def save_images(path: str, images: np.ndarray, file_names: list[str], is_classwise: bool = True):
     folder_save = Path(path)
@@ -65,3 +75,13 @@ def save_images(path: str, images: np.ndarray, file_names: list[str], is_classwi
 
 def save_table(path: str):
     return
+
+def jaccard_similarity(list1: list, list2: list) -> float:
+    """
+    Đo tỉ lệ chồng chéo giữa các tập index ngoại lai bằng Jaccard similarity
+    """
+    set1, set2 = set(list1), set(list2)
+    intersection = len(set1.intersection(set2))
+    union = len(set1.union(set2))
+    
+    return float(intersection) / union if union != 0 else 0.0
