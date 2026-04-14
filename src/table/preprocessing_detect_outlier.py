@@ -19,6 +19,8 @@ from config import settings
 from sklearn.ensemble import IsolationForest
 from sklearn.neighbors import LocalOutlierFactor
 from sklearn.cluster import DBSCAN
+from sklearn.neighbors import NearestNeighbors
+from sklearn.preprocessing import StandardScaler 
 from statistic.test_distribution import KolmogorovSmirnovTesting
 from utils.file import jaccard_similarity
 
@@ -185,20 +187,64 @@ class LOF_Outlier(BaseOutlierDetector):
         
         # Kết quả: -1 là ngoại lai, 1 là bình thường
         return pd.Series(preds == -1, index=numeric_df.index)
-
+    
 # DBSCAN
 class DBSCAN_Outlier(BaseOutlierDetector):
-    def __init__(self, eps: float = 0.5, min_samples: int = 5):
-        super().__init__(step_name=f"DBSCAN Outlier Detection (eps={eps}, min_samples={min_samples})")
+    def __init__(self, eps: float = 1.5, min_samples: int = 10, sample_size: int = 40000):
+        # Log ra thông số để dễ theo dõi
+        super().__init__(step_name=f"DBSCAN (eps={eps}, min_samples={min_samples}, Sub-sample={sample_size})")
         self.eps = eps
         self.min_samples = min_samples
+        self.sample_size = sample_size
 
     def _get_outlier_mask(self, numeric_df: pd.DataFrame) -> pd.Series:
-        model = DBSCAN(eps=self.eps, min_samples=self.min_samples)
-        preds = model.fit_predict(numeric_df)
+        # Chuẩn hoá dữ liệu trước tiên
+        numeric_df_32 = numeric_df.astype(np.float32)
+        scaler = StandardScaler()
+        scaled_data = scaler.fit_transform(numeric_df_32)
         
-        # Các điểm nhiễu (ngoại lai) sẽ được gán nhãn là -1
-        return pd.Series(preds == -1, index=numeric_df.index)
+        del numeric_df_32
+        gc.collect()
+
+        total_rows = scaled_data.shape[0]
+        actual_sample_size = min(self.sample_size, total_rows)
+
+        # Lấy mẫu đại diện
+        np.random.seed(42) # Cố định seed để kết quả tái lập được
+        sample_indices = np.random.choice(total_rows, size=actual_sample_size, replace=False)
+        sampled_data = scaled_data[sample_indices]
+
+        # Chạy DBSCAN trên tập mẫu 
+        dbscan = DBSCAN(eps=self.eps, min_samples=self.min_samples, n_jobs=1)
+        dbscan.fit(sampled_data)
+
+        # Trích xuất điểm lõi
+        # dbscan.components_ chứa tọa độ các điểm đủ điều kiện làm Lõi của các cụm
+        core_samples = dbscan.components_
+        
+        del sampled_data
+        gc.collect()
+
+        # Kiểm tra nếu không có cụm nào được tạo ra
+        if len(core_samples) == 0:
+            print("  CẢNH BÁO: DBSCAN không tìm thấy cụm nào! Tất cả đều bị coi là ngoại lai. Hãy tăng eps lên.")
+            return pd.Series(True, index=numeric_df.index)
+
+        # Dùng nearest neighbors 
+        # Tìm khoảng cách tới 1 điểm lõi gần nhất
+        nn = NearestNeighbors(n_neighbors=1, n_jobs=1)
+        nn.fit(core_samples)
+        
+        distances, _ = nn.kneighbors(scaled_data)
+        
+        # Nếu khoảng cách đến Lõi gần nhất > eps => Đây là điểm nhiễu (Ngoại lai)
+        outlier_mask = (distances.flatten() > self.eps)
+
+        # Dọn rác lần cuối
+        del scaled_data, distances, core_samples
+        gc.collect()
+
+        return pd.Series(outlier_mask, index=numeric_df.index)
     
 # Ham main dung de test
 def main():
