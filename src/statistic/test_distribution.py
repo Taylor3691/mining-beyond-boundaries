@@ -31,10 +31,43 @@ class KolmogorovSmirnovTesting(DistributionTesting):
         self.test(data_orig_flat, data_proc_flat)
         return
     
+    def visitTableDataset(self, obj):
+        """Kiểm định phân phối cho dữ liệu dạng bảng"""
+        # Bắt buộc object phải giữ lại dữ liệu gốc _origin_data để có cái so sánh
+        if not hasattr(obj, '_origin_data') or getattr(obj, '_origin_data') is None:
+             raise AttributeError("TableDataset phải có thuộc tính '_origin_data' để thực hiện KS Test. Hãy cập nhật TableDataset.")
+        
+        try:
+            # Lọc chỉ lấy các feature là số (bỏ text/category) và chuyển thành 1D array
+            orig_numeric = obj._origin_data.select_dtypes(include=[np.number]).values.flatten()
+            proc_numeric = obj.data.select_dtypes(include=[np.number]).values.flatten()
+            
+            # Loại bỏ NaN để hàm tính toán của scipy không bị lỗi
+            data_orig_flat = orig_numeric[~np.isnan(orig_numeric)]
+            data_proc_flat = proc_numeric[~np.isnan(proc_numeric)]
+        except Exception as e:
+            raise ValueError(f"Lỗi khi xử lý dữ liệu bảng: {e}")
+
+        self.test(data_orig_flat, data_proc_flat)
+        return
+    
+    """
     def run(self, obj: ImageDataset):
         if isinstance(obj, ImageDataset):
             self.visitImageDataset(obj)
         return 
+    """
+
+    def run(self, obj):
+        # Gọi phương thức visit phù hợp dựa vào type của object truyền vào
+        obj_type = type(obj).__name__
+        if obj_type == "ImageDataset":
+            self.visitImageDataset(obj)
+        elif obj_type == "TableDataset":
+            self.visitTableDataset(obj)
+        else:
+            raise ValueError(f"Lớp {self.__class__.__name__} chưa hỗ trợ type: {obj_type}")
+        return
     
     def log(self):
         print(f"Step: {self.step_name}")
