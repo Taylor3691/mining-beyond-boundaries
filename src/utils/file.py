@@ -1,4 +1,5 @@
 import config
+import pandas as pd
 from pathlib import Path
 import cv2
 import numpy as np
@@ -47,7 +48,11 @@ def load_image_paths(path: str):
     return paths, labels, filenames
 
 def load_table(path: str):
-    return
+    try:
+        df = pd.read_csv(path, low_memory=False)
+        return df
+    except Exception as e:
+        raise IOError(f"Error loading CSV file from{path}: {e}")
 
 def save_images(path: str, images: np.ndarray, file_names: list[str], is_classwise: bool = True):
     folder_save = Path(path)
@@ -63,5 +68,8 @@ def save_images(path: str, images: np.ndarray, file_names: list[str], is_classwi
             cv2.imwrite(str(folder_save/ name), image)
     return
 
-def save_table(path: str):
-    return
+def save_table(path: str, data: pd.DataFrame):
+    try:
+        data.to_csv(path, index=False) 
+    except Exception as e:
+        raise IOError(f"Error saving CSV file to {path}: {e}")
