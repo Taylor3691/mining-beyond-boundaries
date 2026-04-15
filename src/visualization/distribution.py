@@ -1,12 +1,11 @@
-import matplotlib
-matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
+import pandas as pd
+from sklearn.manifold import TSNE
 
 # ==========================================
 # Task 11: Kiểm tra Imbalance
-import matplotlib.pyplot as plt
 
 def plot_class_distribution(classes: list, counts: list):
     """
@@ -90,7 +89,6 @@ def plot_histogram(pixel_data, title_suffix=""):
     
     plt.tight_layout()
     plt.show()
-    plt.close()
 
 def plot_kde(pixel_data, title_suffix=""):
     """
@@ -118,7 +116,6 @@ def plot_kde(pixel_data, title_suffix=""):
     
     plt.tight_layout()
     plt.show()
-    plt.close()
 
 def plot_distribution_by_class(images, labels, class_names, title_suffix=""):
     """
@@ -165,8 +162,69 @@ def plot_distribution_by_class(images, labels, class_names, title_suffix=""):
 
     axes[0].set_ylabel('Mật độ phân phối', fontsize=12)
     plt.tight_layout()
-    plt.subplots_adjust(bottom=0.25) # Chừa khoảng trống phía dưới cho legend
+    plt.subplots_adjust(bottom=0.25)
     plt.show()
+    
+def plot_tsne(images, labels, class_names, title_suffix="", n_samples=1000):
+    """
+    Vẽ biểu đồ t-SNE để visualize sự phân bố dữ liệu trong không gian 2D.
+    Args:
+        images (numpy.ndarray/list): Tập ảnh dạng (N, H, W, 3).
+        labels (numpy.ndarray/list): Nhãn của từng ảnh (dạng số nguyên).
+        class_names (list): Danh sách tên các lớp tương ứng.
+        title_suffix (str): Hậu tố thêm vào tiêu đề.
+        n_samples (int): Giới hạn số ảnh để t-SNE không bị chậm. 
+    """
+    images_arr = np.array(images)
+    labels_arr = np.array(labels)
+    
+    # Subsampling nếu dữ liệu lớn hơn giới hạn
+    if len(images_arr) > n_samples:
+        indices = np.random.choice(len(images_arr), n_samples, replace=False)
+        data_to_plot = images_arr[indices]
+        labels_to_plot = labels_arr[indices]
+    else:
+        data_to_plot = images_arr
+        labels_to_plot = labels_arr
+        
+    n_samples_actual = len(data_to_plot)
+    if n_samples_actual == 0:
+        print("No data available to plot t-SNE.")
+        return
+        
+    # Flatten từng ảnh về 1D để chạy t-SNE
+    flattened_data = data_to_plot.reshape(n_samples_actual, -1)
+    
+    # t-SNE
+    tsne = TSNE(n_components=2, random_state=42, perplexity=min(30, max(1, n_samples_actual - 1)), max_iter=1000)
+    tsne_results = tsne.fit_transform(flattened_data)
+    
+    df = pd.DataFrame()
+    df['tsne-2d-one'] = tsne_results[:,0]
+    df['tsne-2d-two'] = tsne_results[:,1]
+    df['Label'] = [class_names[lbl] for lbl in labels_to_plot]
+    
+    # Dùng fig/ax để tương thích với vòng lặp trong Jupyter
+    fig, ax = plt.subplots(figsize=(10, 8))
+    sns.scatterplot(
+        x="tsne-2d-one", y="tsne-2d-two",
+        hue="Label",
+        palette=sns.color_palette("tab10", len(np.unique(labels_to_plot))),
+        data=df,
+        legend="full",
+        alpha=0.7,
+        ax=ax
+    )
+    
+    ax.set_title(f't-SNE Mapping (n={n_samples_actual}) {title_suffix}', fontsize=16, fontweight='bold')
+    ax.set_xlabel('t-SNE Component 1', fontsize=12)
+    ax.set_ylabel('t-SNE Component 2', fontsize=12)
+    ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+    fig.tight_layout()
+    
+    from IPython.display import display
+    display(fig)
+    plt.close(fig)
     plt.close()
 # ==========================================
 # Task 10-Module 2: Phân tích phân phối dữ liệu (Histogram & KDE)
