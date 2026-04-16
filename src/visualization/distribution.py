@@ -1,12 +1,11 @@
-import matplotlib
-matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
+import pandas as pd
+from visualization.relationship import plot_dim_reduction_2d
 
 # ==========================================
 # Task 11: Kiểm tra Imbalance
-import matplotlib.pyplot as plt
 
 def plot_class_distribution(classes: list, counts: list):
     """
@@ -90,7 +89,6 @@ def plot_histogram(pixel_data, title_suffix=""):
     
     plt.tight_layout()
     plt.show()
-    plt.close()
 
 def plot_kde(pixel_data, title_suffix=""):
     """
@@ -118,7 +116,6 @@ def plot_kde(pixel_data, title_suffix=""):
     
     plt.tight_layout()
     plt.show()
-    plt.close()
 
 def plot_distribution_by_class(images, labels, class_names, title_suffix=""):
     """
@@ -165,26 +162,31 @@ def plot_distribution_by_class(images, labels, class_names, title_suffix=""):
 
     axes[0].set_ylabel('Mật độ phân phối', fontsize=12)
     plt.tight_layout()
-    plt.subplots_adjust(bottom=0.25) # Chừa khoảng trống phía dưới cho legend
+    plt.subplots_adjust(bottom=0.25)
     plt.show()
-    plt.close()
-# ==========================================
-# Task 10-Module 2: Phân tích phân phối dữ liệu (Histogram & KDE)
-# ==========================================
+    
+def plot_tsne(images, labels, class_names, title_suffix="", n_samples=1000):
+    """
+    Wrapper: Vẽ biểu đồ t-SNE cho dữ liệu ảnh.
+    - Nhận vào list hoặc numpy array.
+    - Tự động flatten images (N, H, W, 3) → (N, H*W*3).
+    - Gọi hàm plot_dim_reduction_2d (relationship.py) với method='tsne'.
+    """
+    if isinstance(images, list):
+        X = np.array(images)
+    else:
+        X = images.copy()
 
-def plot_column_distribution(data_series: np.ndarray, column_name: str, test_name: str = ""):
-    """
-    Trực quan hóa phân phối của một cột dữ liệu số bằng Histogram kết hợp đường KDE.
-    """
-    plt.figure(figsize=(10, 6))
-    
-    # Vẽ biểu đồ phân phối
-    sns.histplot(data_series, kde=True, color='royalblue', bins=30, stat="density", linewidth=0)
-    
-    plt.title(f"Phân phối dữ liệu: {column_name} \n(Trước kiểm định {test_name})", fontsize=14, pad=15)
-    plt.xlabel(f"Giá trị của {column_name}", fontsize=12)
-    plt.ylabel("Mật độ (Density)", fontsize=12)
-    plt.grid(axis='y', linestyle='--', alpha=0.7)
-    
-    plt.tight_layout()
-    plt.show()
+    y = np.array(labels)
+    if len(X.shape) > 2:
+        X = X.reshape(X.shape[0], -1)
+    if len(X) > n_samples:
+        indices = np.random.choice(len(X), n_samples, replace=False)
+        X = X[indices]
+        y = y[indices]
+    plot_dim_reduction_2d(
+        X=X, 
+        labels=y, 
+        class_names=class_names, 
+        method='tsne'
+    )
