@@ -1,16 +1,22 @@
-# Core Data Science Libraries (pin numpy to a compatible version)
-numpy
-scikit-learn
-scipy
-matplotlib
+# Core data science 
+numpy>=1.26.4
+pandas>=2.2.0
+scikit-learn>=1.5.0
+scipy>=1.13.0
 
-# Image Processing Libraries
-opencv-python
-imagehash
-Pillow
+# Visualization 
+matplotlib>=3.9.0
+seaborn==0.13.2
+missingno==0.5.2
+ipython>=8.0.0
 
-# Utility
-tqdm
+# Image processing 
+opencv-python>=4.10.0
+pillow>=10.4.0
+imagehash==4.3.1
 
-# Plot
-seaborn
+# Dimensionality reduction 
+umap-learn==0.5.7
+
+# Utility 
+tqdm>=4.66.0
