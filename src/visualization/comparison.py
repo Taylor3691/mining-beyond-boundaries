@@ -102,3 +102,33 @@ def plot_normalization_comparison(img_orig: np.ndarray, img_norm: np.ndarray, me
     plt.suptitle(f"Method: {method_name}", fontsize=16, fontweight='bold', y=1.02)
     plt.tight_layout()
     plt.show()
+
+def plot_feature_selection_comparison(k_list, results_dict):
+    """
+    Vẽ biểu đồ đường so sánh F1-score của các phương pháp lọc đặc trưng.
+    """
+    # Palette chuyên dụng để phân biệt rõ các phương pháp
+    markers = ['o', 's', 'D', '^', 'v', 'P', 'X']
+    colors = sns.color_palette("Set1", n_colors=len(results_dict))
+
+    plt.figure(figsize=(12, 7))
+
+    for idx, (method_name, scores) in enumerate(results_dict.items()):
+        marker = markers[idx % len(markers)]
+        plt.plot(
+            k_list, scores,
+            marker=marker,
+            linewidth=2.5,
+            markersize=8,
+            label=method_name,
+            color=colors[idx]
+        )
+
+    plt.title("Feature Selection: F1-Score Comparison", fontsize=16, fontweight='bold', pad=15)
+    plt.xlabel("Number of Selected Features (k)", fontsize=13)
+    plt.ylabel("F1-Score (macro)", fontsize=13)
+    plt.xticks(k_list)
+    plt.legend(title="Method", fontsize=11, title_fontsize=12, loc='lower right')
+    plt.grid(True, linestyle='--', alpha=0.5)
+    plt.tight_layout()
+    plt.show()

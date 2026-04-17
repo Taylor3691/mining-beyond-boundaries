@@ -128,3 +128,83 @@ def plot_spearman_heatmap(df: pd.DataFrame, title="Spearman Correlation Heatmap"
     plt.xticks(rotation=45, ha='right')
     plt.tight_layout()
     plt.show()
+
+
+def plot_dim_reduction_2d(X, labels, class_names=None, method='tsne',
+                          title_suffix="", n_samples=1000):
+    """
+    Vẽ Scatter Plot 2D sau khi giảm chiều bằng t-SNE hoặc UMAP.
+    """
+    from sklearn.manifold import TSNE
+
+    X = np.array(X)
+    labels = np.array(labels)
+
+    # --- Subsampling ---
+    if len(X) > n_samples:
+        indices = np.random.choice(len(X), n_samples, replace=False)
+        X = X[indices]
+        labels = labels[indices]
+
+    n_actual = len(X)
+    if n_actual == 0:
+        print(f"[plot_dim_reduction_2d] No data available to plot ({method}).")
+        return
+
+    # --- Tính toán giảm chiều ---
+    method_lower = method.lower()
+    if method_lower == 'tsne':
+        reducer = TSNE(
+            n_components=2,
+            random_state=42,
+            perplexity=min(30, max(1, n_actual - 1)),
+            max_iter=1000
+        )
+        embedding = reducer.fit_transform(X)
+        method_label = "t-SNE"
+    elif method_lower == 'umap':
+        try:
+            import umap
+        except ImportError:
+            print("[plot_dim_reduction_2d] UMAP chưa được cài đặt. Chạy: pip install umap-learn")
+            return
+        reducer = umap.UMAP(n_components=2, random_state=42)
+        embedding = reducer.fit_transform(X)
+        method_label = "UMAP"
+    else:
+        raise ValueError(f"Phương pháp '{method}' không hợp lệ. Chọn 'tsne' hoặc 'umap'.")
+
+    # --- Chuẩn bị DataFrame ---
+    if class_names is not None:
+        label_names = [class_names[int(lbl)] for lbl in labels]
+    else:
+        label_names = [str(lbl) for lbl in labels]
+
+    df = pd.DataFrame({
+        'Dim-1': embedding[:, 0],
+        'Dim-2': embedding[:, 1],
+        'Label': label_names
+    })
+
+    # --- Vẽ Scatter Plot (giữ nguyên thiết kế gốc) ---
+    fig, ax = plt.subplots(figsize=(10, 8))
+    sns.scatterplot(
+        x='Dim-1', y='Dim-2',
+        hue='Label',
+        palette=sns.color_palette("tab10", len(np.unique(labels))),
+        data=df,
+        legend="full",
+        alpha=0.7,
+        ax=ax
+    )
+
+    ax.set_title(f'{method_label} Mapping (n={n_actual}) {title_suffix}',
+                 fontsize=16, fontweight='bold')
+    ax.set_xlabel(f'{method_label} Component 1', fontsize=12)
+    ax.set_ylabel(f'{method_label} Component 2', fontsize=12)
+    ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+    fig.tight_layout()
+
+    from IPython.display import display
+    display(fig)
+    plt.close(fig)
