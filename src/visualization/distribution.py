@@ -5,6 +5,7 @@ import pandas as pd
 from visualization.relationship import plot_dim_reduction_2d
 import pandas as pd
 from sklearn.manifold import TSNE
+from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 
 # ==========================================
 # Task 11: Kiểm tra Imbalance
@@ -246,5 +247,29 @@ def plot_column_distribution(data_series: np.ndarray, column_name: str, test_nam
     plt.ylabel("Mật độ (Density)", fontsize=12)
     plt.grid(axis='y', linestyle='--', alpha=0.7)
     
+    plt.tight_layout()
+    plt.show()
+
+def plot_acf_chart(series, n_lags, title="ACF Plot"):
+    """
+    Vẽ biểu đồ Autocorrelation Function (ACF) cho chuỗi thời gian.
+    """
+    fig, ax = plt.subplots(figsize=(14, 5))
+    plot_acf(series.dropna(), lags=n_lags, ax=ax, title=title, color='#1f77b4')
+    plt.grid(True, linestyle='--', alpha=0.5)
+    plt.xlabel('Lags')
+    plt.ylabel('Autocorrelation')
+    plt.tight_layout()
+    plt.show()
+
+def plot_pacf_chart(series, n_lags, title="PACF Plot"):
+    """
+    Vẽ biểu đồ Partial Autocorrelation Function (PACF) cho chuỗi thời gian.
+    """
+    fig, ax = plt.subplots(figsize=(14, 5))
+    plot_pacf(series.dropna(), lags=n_lags, ax=ax, title=title, color='#ff7f0e', method='ywm')
+    plt.grid(True, linestyle='--', alpha=0.5)
+    plt.xlabel('Lags')
+    plt.ylabel('Partial Autocorrelation')
     plt.tight_layout()
     plt.show()
