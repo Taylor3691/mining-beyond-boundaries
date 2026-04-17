@@ -3,6 +3,7 @@ import pandas as pd
 from pathlib import Path
 import cv2
 import numpy as np
+import pandas as pd 
 
 def batch_loader(paths: list[str], batch_size: int = config.BATCH_SIZE):
     for i in range(0, len(paths), batch_size):
@@ -47,6 +48,7 @@ def load_image_paths(path: str):
 
     return paths, labels, filenames
 
+"""
 def load_table(path: str):
     try:
         df = pd.read_csv(path, low_memory=False)
