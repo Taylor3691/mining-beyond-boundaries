@@ -1,7 +1,6 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-
 import numpy as np
 
 def visualize_brightness_contrast_boxplot(df: pd.DataFrame) -> None:
@@ -91,6 +90,44 @@ def plot_ssim_curve(sizes: list, ssim_scores: list, save_path: str = "ssim_vs_si
     # Lưu biểu đồ
     plt.savefig(save_path, dpi=300)
     print(f"\n[Visualizer] SSIM relationship curve successfully saved at: {save_path}")
+
+# =================================================================================
+# TASK 1.1: BỔ SUNG CODE VẼ HEATMAP (PEARSON VÀ SPEARMAN) CHO DỮ LIỆU BẢNG
+# =================================================================================
+
+def plot_pearson_heatmap(df: pd.DataFrame, title="Pearson Correlation Heatmap"):
+    plt.figure(figsize=(14, 12))
+    # Tính ma trận tương quan Pearson
+    corr = df.corr(method='pearson')
+    
+    # Tạo mặt nạ (mask) để che nửa tam giác trên (tránh trùng lặp)
+    mask = np.triu(np.ones_like(corr, dtype=bool))
+    
+    # Vẽ Heatmap (Dùng colormap coolwarm để dễ nhìn Tương quan Âm/Dương)
+    sns.heatmap(corr, mask=mask, annot=True, fmt=".2f", cmap='coolwarm',
+                vmin=-1, vmax=1, square=True, linewidths=.5, cbar_kws={"shrink": .8})
+    
+    plt.title(title, fontsize=16, fontweight='bold', pad=20)
+    plt.xticks(rotation=45, ha='right')
+    plt.tight_layout()
+    plt.show()
+
+def plot_spearman_heatmap(df: pd.DataFrame, title="Spearman Correlation Heatmap"):
+    plt.figure(figsize=(14, 12))
+    # Tính ma trận tương quan Spearman
+    corr = df.corr(method='spearman')
+    
+    # Tạo mặt nạ (mask) để che nửa tam giác trên
+    mask = np.triu(np.ones_like(corr, dtype=bool))
+    
+    # Vẽ Heatmap (Dùng colormap viridis để phân biệt với Pearson)
+    sns.heatmap(corr, mask=mask, annot=True, fmt=".2f", cmap='viridis',
+                vmin=-1, vmax=1, square=True, linewidths=.5, cbar_kws={"shrink": .8})
+    
+    plt.title(title, fontsize=16, fontweight='bold', pad=20)
+    plt.xticks(rotation=45, ha='right')
+    plt.tight_layout()
+    plt.show()
 
 
 def plot_dim_reduction_2d(X, labels, class_names=None, method='tsne',
