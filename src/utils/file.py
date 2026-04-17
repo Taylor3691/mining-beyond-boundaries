@@ -48,7 +48,7 @@ def load_image_paths(path: str):
 
     return paths, labels, filenames
 
-"""
+
 def load_table(path: str):
     try:
         df = pd.read_csv(path, low_memory=False)
