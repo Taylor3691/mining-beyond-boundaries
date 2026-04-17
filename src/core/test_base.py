@@ -9,7 +9,10 @@ class DistributionTesting(Testing):
     
     def visitImageDataset():
         return
-    
+        
+    def visitTableDataset(self, obj):
+        return
+        
     def run(self):
         return super().run()
     

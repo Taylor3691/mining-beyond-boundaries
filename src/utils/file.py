@@ -1,4 +1,5 @@
 import config
+import pandas as pd
 from pathlib import Path
 import cv2
 import numpy as np
@@ -49,15 +50,11 @@ def load_image_paths(path: str):
 
 """
 def load_table(path: str):
-    return
-"""
-
-def load_table(path: str) -> pd.DataFrame:
     try:
-        return pd.read_csv(path, low_memory=False) 
+        df = pd.read_csv(path, low_memory=False)
+        return df
     except Exception as e:
-        print(f"Lỗi khi đọc file {path}: {e}")
-        return None
+        raise IOError(f"Error loading CSV file from{path}: {e}")
 
 def save_images(path: str, images: np.ndarray, file_names: list[str], is_classwise: bool = True):
     folder_save = Path(path)
@@ -73,15 +70,8 @@ def save_images(path: str, images: np.ndarray, file_names: list[str], is_classwi
             cv2.imwrite(str(folder_save/ name), image)
     return
 
-def save_table(path: str):
-    return
-
-def jaccard_similarity(list1: list, list2: list) -> float:
-    """
-    Đo tỉ lệ chồng chéo giữa các tập index ngoại lai bằng Jaccard similarity
-    """
-    set1, set2 = set(list1), set(list2)
-    intersection = len(set1.intersection(set2))
-    union = len(set1.union(set2))
-    
-    return float(intersection) / union if union != 0 else 0.0
+def save_table(path: str, data: pd.DataFrame):
+    try:
+        data.to_csv(path, index=False) 
+    except Exception as e:
+        raise IOError(f"Error saving CSV file to {path}: {e}")

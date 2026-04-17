@@ -5,6 +5,12 @@ from sklearn.decomposition import IncrementalPCA
 from sklearn.preprocessing import StandardScaler
 import numpy as np
 import cv2
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+from sklearn.model_selection import train_test_split
+import time
+import os
+
 
 class ColorTransform(Preprocessing):
     def __init__(self, method: str = None, n: int = DEFAULT_N_COMPONENTS):
@@ -109,3 +115,102 @@ class ColorTransform(Preprocessing):
         if isinstance(obj, ImageDataset):
             self.visitImageDataset(obj)
         return 
+
+class ColorTransformEvaluator(ColorTransform):
+    """
+    Class kế thừa từ ColorTransform gốc.
+    Mở rộng thêm tính năng: Ép RAM siêu tốc, Huấn luyện Logistic Regression và Xuất file ảnh.
+    """
+    def __init__(self, method: str = None, n: int = DEFAULT_N_COMPONENTS):
+        # Kế thừa hoàn toàn hàm __init__ của class cha
+        super().__init__(method=method, n=n)
+        # Ép PCA tăng batch_size để chạy lẹ hơn
+        self._pca = IncrementalPCA(n_components=n, batch_size=1024)
+        self._transformed_data_cache = None 
+
+    def visitImageDataset(self, obj: ImageDataset):
+        """
+        Ghi đè (Override) hàm visitImageDataset để thu thập dữ liệu vào RAM
+        thay vì để nó bay mất như class gốc.
+        """
+        self._dataset_name = "Image Dataset"
+        print(f"   [INFO] Đang chạy Tiền xử lý (Fast-Cache Mode)...")
+        try:
+            # Vẫn dùng lại logic chạy fit của class cha (Đọc đĩa 2 lần)
+            self.fit(obj)
+            
+            # Khởi chạy transform của cha và gộp kết quả mảng (Đọc đĩa lần 3)
+            batches = self.transform(obj)
+            self._transformed_data_cache = np.vstack(batches)
+            
+            # Cập nhật thông số để hàm log() của class cha in ra
+            self._explanied_variance_sum = self._pca.explained_variance_.sum()
+            self._explanied_variance_ratio_sum = self._pca.explained_variance_ratio_.sum()
+            self._status = "Success"
+        except Exception as e:
+            self._status = f"Failed ({str(e)})"
+        finally:
+            # Gọi lại hàm log nguyên bản của class cha
+            self.log()
+        return
+            
+    def evaluation(self, obj: ImageDataset, n_repeats: int = 3):
+        """Hàm mới: Đánh giá mô hình"""
+        print(f"\n[EVALUATION] Bắt đầu huấn luyện mô hình (Không gian: {self._method})...")
+        start_time = time.time()
+        
+        if self._transformed_data_cache is None:
+             raise ValueError("Chưa có dữ liệu cache. Hàm run() bị lỗi.")
+             
+        X = self._transformed_data_cache
+        y = np.array(obj._labels)
+        metrics_history = []
+        solver_type = 'saga' if len(X) > 10000 else 'lbfgs'
+
+        for i in range(n_repeats):
+            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=i*42)
+            model = LogisticRegression(max_iter=500, solver=solver_type, n_jobs=-1)
+            model.fit(X_train, y_train)
+            y_pred = model.predict(X_test)
+            
+            metrics = {
+                "accuracy": accuracy_score(y_test, y_pred),
+                "precision": precision_score(y_test, y_pred, average='weighted', zero_division=0),
+                "recall": recall_score(y_test, y_pred, average='weighted', zero_division=0),
+                "f1_score": f1_score(y_test, y_pred, average='weighted', zero_division=0)
+            }
+            metrics_history.append(metrics)
+
+        avg_metrics = {k: np.mean([m[k] for m in metrics_history]) for k in metrics_history[0].keys()}
+        print(f"[RESULT] {self._method} (Mất {time.time() - start_time:.1f}s) - F1: {avg_metrics['f1_score']:.4f}\n")
+        return avg_metrics
+    
+    def save_images(self, obj: ImageDataset, base_dir: str = "../data/preprocessing/color_space"):
+        """Hàm mới: Xuất ảnh ra ổ cứng để làm minh chứng"""
+        save_dir = os.path.join(base_dir, self._method.lower())
+        print(f"   [INFO] Đang xuất file ảnh ra: {save_dir} ... (Vui lòng đợi)")
+        
+        code = COLOR_MAP[self._method]
+        idx_to_class = {v: k for k, v in obj.class_idx.items()}
+        
+        for path, label, fname in zip(obj.image_paths, obj._labels, obj._file_names):
+            class_name = idx_to_class[label]
+            class_dir = os.path.join(save_dir, class_name)
+            os.makedirs(class_dir, exist_ok=True)
+
+            img = cv2.imread(path)
+            if img is None:
+                continue
+                
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            if code is not None:
+                img = cv2.cvtColor(img, code) 
+            
+            img = cv2.resize(img, (128, 128))
+            
+            if self._method != "Grayscale":
+                img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+            
+            cv2.imwrite(os.path.join(class_dir, fname), img)
+            
+        print(f"   [SUCCESS] Đã lưu xong ảnh cho không gian màu {self._method}!")
