@@ -67,7 +67,10 @@ class _BaseTableNormalization(Preprocessing):
 			raise ValueError(f"Thiếu cột khi transform: {missing_cols}")
 
 		transformed_df = df.copy()
-		transformed_df.loc[:, self._numeric_columns] = self._scaler.transform(df[self._numeric_columns])
+		scaled_values = self._scaler.transform(df[self._numeric_columns])
+		scaled_df = pd.DataFrame(scaled_values, columns=self._numeric_columns, index=transformed_df.index)
+		# Assign theo block thay vì .loc inplace để pandas tự nâng kiểu dữ liệu an toàn.
+		transformed_df[self._numeric_columns] = scaled_df
 
 		self._transformed = transformed_df if is_dataframe else transformed_df.to_numpy()
 		return self._transformed
