@@ -20,3 +20,4 @@ umap-learn==0.5.7
 
 # Utility 
 tqdm>=4.66.0
+tabulate>=0.9.0
