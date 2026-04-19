@@ -261,17 +261,19 @@ def plot_granger_causality_directed_graph(
         return
 
     # --- Layout vòng tròn để dễ quan sát quan hệ hai chiều ---
-    radius = 3.2
+    # Node lớn hơn để chữ trong node rõ ràng hơn.
+    max_label_len = max(len(str(node)) for node in nodes)
+    node_radius = float(np.clip(0.045 * max_label_len + 0.22, 0.55, 0.95))
+    radius = max(3.2, 2.2 + 0.9 * n_nodes)
     angles = np.linspace(0, 2 * np.pi, n_nodes, endpoint=False)
     positions = {
         node: np.array([radius * np.cos(angle), radius * np.sin(angle)])
         for node, angle in zip(nodes, angles)
     }
 
-    fig, ax = plt.subplots(figsize=(10, 8))
+    fig, ax = plt.subplots(figsize=(12, 10))
 
     # Kích thước node dùng để căn chỉnh điểm bắt đầu/kết thúc mũi tên
-    node_radius = 0.28
     edge_count = 0
 
     # --- Vẽ cạnh có hướng theo ngưỡng alpha ---
@@ -320,28 +322,68 @@ def plot_granger_causality_directed_graph(
             edge_count += 1
 
             if show_edge_labels:
-                midpoint = (start_adj + end_adj) / 2.0
-                normal = np.array([-unit_vec[1], unit_vec[0]])
-                offset = normal * (0.18 if curve_rad > 0 else -0.18)
-                text_pos = midpoint + offset
+                # Với cặp hai chiều A->B và B->A, nếu đặt nhãn theo midpoint thuần túy
+                # thì hai nhãn có thể trùng nhau. Ta dùng pháp tuyến theo "cặp node"
+                # (không phụ thuộc chiều cạnh) để tách nhãn ra hai phía rõ rệt.
+                pair_u = nodes[min(i, j)]
+                pair_v = nodes[max(i, j)]
+                pair_vec = positions[pair_v] - positions[pair_u]
+                pair_dist = np.linalg.norm(pair_vec)
+                if pair_dist == 0:
+                    continue
 
+                pair_unit = pair_vec / pair_dist
+                pair_normal = np.array([-pair_unit[1], pair_unit[0]])
+
+                # Đặt điểm bám nhãn ở 58% chiều cạnh để A->B và B->A không cùng một điểm
+                # (do chiều cạnh bị đảo ngược).
+                label_anchor = start_adj + (end_adj - start_adj) * 0.58
+
+                reverse_p = p_value_matrix.loc[effect, cause]
+                has_reverse_edge = pd.notna(reverse_p) and reverse_p < alpha
+                normal_offset = 0.62 if has_reverse_edge else 0.42
+                offset = pair_normal * (normal_offset if curve_rad > 0 else -normal_offset)
+                text_pos = label_anchor + offset
+
+                # Ghi rõ hướng cạnh để tránh mơ hồ: cause -> effect
                 ax.text(
                     text_pos[0],
                     text_pos[1],
-                    f"p={p_value:.3f}",
-                    fontsize=8,
+                    f"{cause} -> {effect}\np={p_value:.3f}",
+                    fontsize=8.5,
                     color="#8B0000",
                     ha="center",
                     va="center",
-                    bbox={"facecolor": "white", "alpha": 0.75, "edgecolor": "none", "pad": 0.4},
+                    zorder=6,
+                    clip_on=False,
+                    bbox={"facecolor": "white", "alpha": 0.86, "edgecolor": "#d9d9d9", "pad": 0.45},
                 )
 
     # --- Vẽ node trên cùng ---
+    def _format_node_label(node_name: str) -> str:
+        """Tách nhãn dài thành 2 dòng để tránh bị cụt chữ trong node."""
+        text = str(node_name)
+        if len(text) <= 7:
+            return text
+
+        split_idx = len(text) // 2
+        return f"{text[:split_idx]}\n{text[split_idx:]}"
+
     for node in nodes:
         x, y = positions[node]
         circle = plt.Circle((x, y), node_radius, facecolor="#4C78A8", edgecolor="white", linewidth=2.0, zorder=3)
         ax.add_patch(circle)
-        ax.text(x, y, str(node), color="white", fontsize=10, fontweight="bold", ha="center", va="center", zorder=4)
+        ax.text(
+            x,
+            y,
+            _format_node_label(node),
+            color="white",
+            fontsize=11,
+            fontweight="bold",
+            ha="center",
+            va="center",
+            zorder=4,
+        )
 
     if edge_count == 0:
         ax.text(
@@ -356,8 +398,9 @@ def plot_granger_causality_directed_graph(
 
     ax.set_title(title, fontsize=14, fontweight="bold")
     ax.set_aspect("equal", adjustable="box")
-    ax.set_xlim(-radius - 1.0, radius + 1.0)
-    ax.set_ylim(-radius - 1.0, radius + 1.0)
+    margin = max(1.8, node_radius * 3.5)
+    ax.set_xlim(-radius - margin, radius + margin)
+    ax.set_ylim(-radius - margin, radius + margin)
     ax.axis("off")
 
     plt.tight_layout()
