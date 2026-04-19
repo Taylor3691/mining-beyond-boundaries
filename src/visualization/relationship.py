@@ -2,6 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
+from matplotlib.patches import FancyArrowPatch
 
 def visualize_brightness_contrast_boxplot(df: pd.DataFrame) -> None:
     """
@@ -208,3 +209,161 @@ def plot_dim_reduction_2d(X, labels, class_names=None, method='tsne',
     from IPython.display import display
     display(fig)
     plt.close(fig)
+
+
+def plot_granger_causality_directed_graph(
+    p_value_matrix: pd.DataFrame,
+    alpha: float = 0.05,
+    title: str = "Granger Causality Directed Graph",
+    save_path: str | None = None,
+    show_edge_labels: bool = True,
+):
+    """
+    Vẽ đồ thị có hướng (directed graph) từ ma trận p-value của Granger causality.
+
+    Quy ước ma trận:
+    - Hàng (index): biến gây tác động (cause)
+    - Cột (columns): biến bị tác động (effect)
+    - Nếu p_value_matrix.loc[cause, effect] < alpha => có cạnh cause -> effect
+
+    Parameters
+    ----------
+    p_value_matrix : pd.DataFrame
+        Ma trận p-value vuông, cùng bộ tên biến ở index và columns.
+    alpha : float, default=0.05
+        Ngưỡng ý nghĩa thống kê.
+    title : str, default="Granger Causality Directed Graph"
+        Tiêu đề biểu đồ.
+    save_path : str | None, default=None
+        Đường dẫn lưu ảnh. Nếu None thì chỉ hiển thị.
+    show_edge_labels : bool, default=True
+        Hiển thị nhãn p-value trên cạnh.
+    """
+    if p_value_matrix is None or p_value_matrix.empty:
+        print("[plot_granger_causality_directed_graph] Ma trận p-value rỗng.")
+        return
+
+    if not isinstance(p_value_matrix, pd.DataFrame):
+        raise TypeError("p_value_matrix phải là pandas.DataFrame")
+
+    # Kiểm tra tính vuông và khớp nhãn index/columns
+    if p_value_matrix.shape[0] != p_value_matrix.shape[1]:
+        raise ValueError("p_value_matrix phải là ma trận vuông (N x N).")
+
+    if list(p_value_matrix.index) != list(p_value_matrix.columns):
+        raise ValueError("index và columns của p_value_matrix phải cùng thứ tự tên biến.")
+
+    nodes = list(p_value_matrix.index)
+    n_nodes = len(nodes)
+
+    if n_nodes < 2:
+        print("[plot_granger_causality_directed_graph] Cần ít nhất 2 biến để vẽ đồ thị.")
+        return
+
+    # --- Layout vòng tròn để dễ quan sát quan hệ hai chiều ---
+    radius = 3.2
+    angles = np.linspace(0, 2 * np.pi, n_nodes, endpoint=False)
+    positions = {
+        node: np.array([radius * np.cos(angle), radius * np.sin(angle)])
+        for node, angle in zip(nodes, angles)
+    }
+
+    fig, ax = plt.subplots(figsize=(10, 8))
+
+    # Kích thước node dùng để căn chỉnh điểm bắt đầu/kết thúc mũi tên
+    node_radius = 0.28
+    edge_count = 0
+
+    # --- Vẽ cạnh có hướng theo ngưỡng alpha ---
+    for i, cause in enumerate(nodes):
+        for j, effect in enumerate(nodes):
+            if i == j:
+                continue
+
+            p_value = p_value_matrix.loc[cause, effect]
+            if pd.isna(p_value) or p_value >= alpha:
+                continue
+
+            start = positions[cause]
+            end = positions[effect]
+
+            direction = end - start
+            distance = np.linalg.norm(direction)
+            if distance == 0:
+                continue
+
+            unit_vec = direction / distance
+
+            # Dời điểm bắt đầu/kết thúc vào sát viền node để mũi tên đẹp hơn
+            start_adj = start + unit_vec * node_radius
+            end_adj = end - unit_vec * node_radius
+
+            # Độ cong khác dấu theo cặp để giảm chồng chéo khi có cạnh ngược chiều
+            curve_rad = 0.18 if i < j else -0.18
+
+            # p-value càng nhỏ => cạnh càng đậm và dày
+            strength = float(np.clip((alpha - p_value) / alpha, 0.0, 1.0))
+            line_width = 1.0 + 2.8 * strength
+            edge_color = plt.cm.Reds(0.35 + 0.65 * strength)
+
+            arrow = FancyArrowPatch(
+                posA=tuple(start_adj),
+                posB=tuple(end_adj),
+                arrowstyle="-|>",
+                mutation_scale=14,
+                linewidth=line_width,
+                color=edge_color,
+                alpha=0.92,
+                connectionstyle=f"arc3,rad={curve_rad}",
+            )
+            ax.add_patch(arrow)
+            edge_count += 1
+
+            if show_edge_labels:
+                midpoint = (start_adj + end_adj) / 2.0
+                normal = np.array([-unit_vec[1], unit_vec[0]])
+                offset = normal * (0.18 if curve_rad > 0 else -0.18)
+                text_pos = midpoint + offset
+
+                ax.text(
+                    text_pos[0],
+                    text_pos[1],
+                    f"p={p_value:.3f}",
+                    fontsize=8,
+                    color="#8B0000",
+                    ha="center",
+                    va="center",
+                    bbox={"facecolor": "white", "alpha": 0.75, "edgecolor": "none", "pad": 0.4},
+                )
+
+    # --- Vẽ node trên cùng ---
+    for node in nodes:
+        x, y = positions[node]
+        circle = plt.Circle((x, y), node_radius, facecolor="#4C78A8", edgecolor="white", linewidth=2.0, zorder=3)
+        ax.add_patch(circle)
+        ax.text(x, y, str(node), color="white", fontsize=10, fontweight="bold", ha="center", va="center", zorder=4)
+
+    if edge_count == 0:
+        ax.text(
+            0,
+            0,
+            f"Không có cạnh nhân quả với alpha={alpha}",
+            ha="center",
+            va="center",
+            fontsize=11,
+            color="gray",
+        )
+
+    ax.set_title(title, fontsize=14, fontweight="bold")
+    ax.set_aspect("equal", adjustable="box")
+    ax.set_xlim(-radius - 1.0, radius + 1.0)
+    ax.set_ylim(-radius - 1.0, radius + 1.0)
+    ax.axis("off")
+
+    plt.tight_layout()
+
+    if save_path:
+        plt.savefig(save_path, dpi=300, bbox_inches="tight")
+        print(f"[Visualizer] Granger directed graph saved at: {save_path}")
+
+    plt.show()
