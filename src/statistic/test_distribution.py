@@ -2,10 +2,7 @@ from core import DistributionTesting
 from image import ImageDataset
 import numpy as np
 from scipy import stats
-import pandas as pd
-from scipy import stats
 from IPython.display import display, Markdown
-from core.test_base import DistributionTesting 
 from table.dataset import TableDataset  
 
 class KolmogorovSmirnovTesting(DistributionTesting):

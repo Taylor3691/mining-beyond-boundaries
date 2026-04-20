@@ -6,6 +6,7 @@ from visualization.relationship import plot_dim_reduction_2d
 import pandas as pd
 from sklearn.manifold import TSNE
 import matplotlib.patches as mpatches
+from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 
 # ==========================================
 # Task 11: Kiểm tra Imbalance
@@ -323,5 +324,119 @@ def plot_ks_comparison_summary(ks_results: list, alpha: float = 0.05):
         "Tổng hợp Kiểm định Kolmogorov-Smirnov: So sánh các Phương pháp Chuẩn hóa",
         fontsize=15, fontweight='bold', y=1.02
     )
+
+def plot_violin_comparison(
+    before_df: pd.DataFrame,
+    after_dfs: dict[str, pd.DataFrame],
+    columns: list[str] | None = None,
+    sample_size: int = 3000,
+    ncols: int = 2,
+    title_suffix: str = "",
+):
+    """
+    Vẽ violin plot để so sánh phân phối trước/sau scaling theo từng cột.
+
+    Args:
+        before_df (pd.DataFrame): Dữ liệu trước scaling.
+        after_dfs (dict[str, pd.DataFrame]): Từ điển {tên_phương_pháp: DataFrame sau scaling}.
+        columns (list[str] | None): Danh sách cột cần vẽ. Nếu None, tự động lấy tất cả cột số.
+        sample_size (int): Số mẫu tối đa cho mỗi nhóm để tránh vẽ quá nặng.
+        ncols (int): Số cột subplot trên mỗi hàng.
+        title_suffix (str): Hậu tố hiển thị thêm ở tiêu đề tổng.
+    """
+    if not isinstance(before_df, pd.DataFrame) or before_df.empty:
+        print("[Violin] before_df không hợp lệ hoặc rỗng.")
+        return
+
+    if not after_dfs:
+        print("[Violin] after_dfs đang rỗng, không có dữ liệu để so sánh.")
+        return
+
+    source_map = {"Trước scaling": before_df}
+    source_map.update(after_dfs)
+
+    if columns is None:
+        columns = before_df.select_dtypes(include=[np.number]).columns.tolist()
+
+    valid_columns = [
+        col for col in columns
+        if all(isinstance(df, pd.DataFrame) and col in df.columns for df in source_map.values())
+    ]
+
+    if not valid_columns:
+        print("[Violin] Không tìm thấy cột hợp lệ để vẽ.")
+        return
+
+    ncols = max(1, int(ncols))
+    n_plots = len(valid_columns)
+    nrows = int(np.ceil(n_plots / ncols))
+
+    fig, axes = plt.subplots(nrows=nrows, ncols=ncols, figsize=(7 * ncols, 4.5 * nrows), squeeze=False)
+    fig.suptitle(f"So sánh phân phối bằng Violin Plot {title_suffix}", fontsize=16, fontweight="bold")
+
+    for idx, col in enumerate(valid_columns):
+        r, c = divmod(idx, ncols)
+        ax = axes[r][c]
+
+        long_parts = []
+        for label, df in source_map.items():
+            series = pd.to_numeric(df[col], errors="coerce").dropna()
+            if sample_size and sample_size > 0 and len(series) > sample_size:
+                series = series.sample(sample_size, random_state=42)
+
+            long_parts.append(
+                pd.DataFrame(
+                    {
+                        "Phiên bản": label,
+                        "Giá trị": series.values,
+                    }
+                )
+            )
+
+        plot_df = pd.concat(long_parts, ignore_index=True)
+
+        sns.violinplot(
+            data=plot_df,
+            x="Phiên bản",
+            y="Giá trị",
+            inner="quartile",
+            cut=0,
+            ax=ax,
+        )
+        ax.set_title(col, fontsize=12)
+        ax.set_xlabel("")
+        ax.set_ylabel("Giá trị")
+        ax.tick_params(axis="x", rotation=20)
+        ax.grid(axis="y", alpha=0.3, linestyle="--")
+
+    # Ẩn các ô subplot thừa
+    for idx in range(n_plots, nrows * ncols):
+        r, c = divmod(idx, ncols)
+        axes[r][c].axis("off")
+
+    plt.tight_layout(rect=[0, 0, 1, 0.97])
+    plt.show()
+
+def plot_acf_chart(series, n_lags, title="ACF Plot"):
+    """
+    Vẽ biểu đồ Autocorrelation Function (ACF) cho chuỗi thời gian.
+    """
+    fig, ax = plt.subplots(figsize=(14, 5))
+    plot_acf(series.dropna(), lags=n_lags, ax=ax, title=title, color='#1f77b4')
+    plt.grid(True, linestyle='--', alpha=0.5)
+    plt.xlabel('Lags')
+    plt.ylabel('Autocorrelation')
+    plt.tight_layout()
+    plt.show()
+
+def plot_pacf_chart(series, n_lags, title="PACF Plot"):
+    """
+    Vẽ biểu đồ Partial Autocorrelation Function (PACF) cho chuỗi thời gian.
+    """
+    fig, ax = plt.subplots(figsize=(14, 5))
+    plot_pacf(series.dropna(), lags=n_lags, ax=ax, title=title, color='#ff7f0e', method='ywm')
+    plt.grid(True, linestyle='--', alpha=0.5)
+    plt.xlabel('Lags')
+    plt.ylabel('Partial Autocorrelation')
     plt.tight_layout()
     plt.show()
