@@ -5,6 +5,7 @@ import pandas as pd
 from visualization.relationship import plot_dim_reduction_2d
 import pandas as pd
 from sklearn.manifold import TSNE
+import matplotlib.patches as mpatches
 
 # ==========================================
 # Task 11: Kiểm tra Imbalance
@@ -70,85 +71,42 @@ def plot_class_distribution(classes: list, counts: list):
 # ==========================================
 # Task 8: Phân tích phân phối Pixel (Histogram & KDE)
 # ==========================================
-def plot_histogram(pixel_data, title_suffix=""):
-    """
-    Vẽ biểu đồ Histogram. 
-    Sử dụng Subplots (1 hàng, 3 cột) để tách biệt 3 kênh R, G, B.
-    """
+def plot_histogram(pixel_data: np.ndarray, title_suffix: str = ""):
+    """Vẽ Histogram cho 3 kênh màu R-G-B."""
     fig, axes = plt.subplots(1, 3, figsize=(18, 5), sharey=True)
-    fig.suptitle(f'Pixel Intensity Distribution (Histogram) {title_suffix}', fontsize=16, fontweight='bold')
-    
-    colors = ['red', 'green', 'blue']
-    labels = ['Red Channel', 'Green Channel', 'Blue Channel']
+    fig.suptitle(f'Pixel Intensity Distribution (Histogram) {title_suffix}', fontweight='bold', fontsize=16)
+    for i, col in enumerate(['red', 'green', 'blue']):
+        axes[i].hist(pixel_data[:, i], bins=100, color=col, alpha=0.7, density=True)
+        axes[i].set_title(f"{col.capitalize()} Channel"); axes[i].grid(alpha=0.3)
+    plt.tight_layout(); plt.show()
 
-    for i in range(3):
-        axes[i].hist(pixel_data[:, i], bins=256, range=[0, 256], color=colors[i], alpha=0.75)
-        axes[i].set_title(labels[i], fontsize=13, color=colors[i])
-        axes[i].set_xlabel('Giá trị Pixel (0 - 255)', fontsize=12)
-        axes[i].grid(axis='y', alpha=0.3, linestyle='--')
-        
-    axes[0].set_ylabel('Tần suất (Số lượng pixel)', fontsize=12)
-    
-    plt.tight_layout()
-    plt.show()
-
-def plot_kde(pixel_data, title_suffix=""):
-    """
-    Vẽ biểu đồ KDE.
-    Sử dụng Subplots (1 hàng, 3 cột) để vẽ 3 phân phối của 3 kênh màu.
-    """
+def plot_kde(pixel_data: np.ndarray, title_suffix: str = ""):
+    """Vẽ KDE cho 3 kênh màu R-G-B (tự động lấy mẫu)."""
     fig, axes = plt.subplots(1, 3, figsize=(18, 5), sharey=True)
-    fig.suptitle(f'Kernel Density Estimation (KDE) {title_suffix}', fontsize=16, fontweight='bold')
-    
-    colors = ['red', 'green', 'blue']
-    labels = ['Red', 'Green', 'Blue']
-    
-    for i in range(3):
-        # Subsample để vẽ KDE nhanh hơn nếu dữ liệu quá lớn
-        data_to_plot = pixel_data[:, i]
-        if len(data_to_plot) > 100000:
-            data_to_plot = np.random.choice(data_to_plot, 100000, replace=False)
-
-        sns.kdeplot(data_to_plot, color=colors[i], fill=True, alpha=0.3, ax=axes[i], linewidth=2)
-        axes[i].set_title(f"{labels[i]} Channel", fontsize=13, color=colors[i])
-        axes[i].set_xlabel('Giá trị Pixel (0 - 255)', fontsize=12)
-        axes[i].grid(axis='y', alpha=0.3, linestyle='--')
-        
-    axes[0].set_ylabel('Mật độ phân phối', fontsize=12)
-    
-    plt.tight_layout()
-    plt.show()
+    fig.suptitle(f'Kernel Density Estimation (KDE) {title_suffix}', fontweight='bold', fontsize=16)
+    for i, col in enumerate(['red', 'green', 'blue']):
+        data = pixel_data[:, i]
+        if len(data) > 50000: data = np.random.choice(data, 50000)
+        sns.kdeplot(data, color=col, fill=True, alpha=0.3, ax=axes[i], warn_singular=False)
+        axes[i].set_title(f"{col.capitalize()} Channel"); axes[i].grid(alpha=0.3)
+    plt.tight_layout(); plt.show()
 
 def plot_distribution_by_class(images, labels, class_names, title_suffix=""):
-    """
-    Vẽ KDE plot cho từng class để so sánh sự khác biệt phân phối màu sắc giữa các lớp.
-    
-    Args:
-        images (numpy.ndarray): Tập ảnh dạng (N, H, W, 3).
-        labels (numpy.ndarray/list): Nhãn của từng ảnh (dạng số nguyên từ 0 đến num_classes-1).
-        class_names (list): Danh sách tên các lớp tương ứng.
-        title_suffix (str): Hậu tố thêm vào tiêu đề.
-    """
     fig, axes = plt.subplots(1, 3, figsize=(20, 6), sharey=True)
     fig.suptitle(f'Color Distribution Comparison by Class (KDE) {title_suffix}', fontsize=16, fontweight='bold')
     
     channels = ['Red Channel', 'Green Channel', 'Blue Channel']
     labels_arr = np.array(labels)
     
-    # Tạo dải màu (colormap) để phân biệt các class dễ dàng hơn
     cmap = plt.get_cmap('tab10')
 
     for i in range(3):
         for class_idx, class_name in enumerate(class_names):
-            # Lọc các ảnh thuộc class hiện tại
             class_mask = (labels_arr == class_idx)
             class_images = images[class_mask]
             
             if len(class_images) > 0:
-                # Trích xuất kênh màu thứ i và phẳng hóa (flatten)
                 channel_data = class_images[:, :, :, i].flatten()
-                
-                # TỐI ƯU HIỆU NĂNG: Lấy mẫu ngẫu nhiên 50,000 pixel để vẽ KDE không bị treo máy
                 if len(channel_data) > 50000:
                     channel_data = np.random.choice(channel_data, 50000, replace=False)
                 
@@ -158,7 +116,6 @@ def plot_distribution_by_class(images, labels, class_names, title_suffix=""):
         axes[i].set_xlabel('Giá trị Pixel (0 - 255)', fontsize=12)
         axes[i].grid(axis='y', alpha=0.3, linestyle='--')
         
-        # Chỉ hiển thị chú thích (legend) ở biểu đồ giữa cho gọn
         if i == 1:
             axes[i].legend(title='Classes', bbox_to_anchor=(0.5, -0.15), loc='upper center', ncol=len(class_names)//2 + 1)
 
@@ -180,7 +137,6 @@ def plot_tsne(images, labels, class_names, title_suffix="", n_samples=1000):
     images_arr = np.array(images)
     labels_arr = np.array(labels)
     
-    # Subsampling nếu dữ liệu lớn hơn giới hạn
     if len(images_arr) > n_samples:
         indices = np.random.choice(len(images_arr), n_samples, replace=False)
         data_to_plot = images_arr[indices]
@@ -246,5 +202,126 @@ def plot_column_distribution(data_series: np.ndarray, column_name: str, test_nam
     plt.ylabel("Mật độ (Density)", fontsize=12)
     plt.grid(axis='y', linestyle='--', alpha=0.7)
     
+    plt.tight_layout()
+    plt.show()
+
+def plot_ks_test_results(orig_data, norm_data, method_name, d_stat, p_value):
+    """Vẽ 3 biểu đồ ECDF: Gốc, Chuẩn hóa và Overlay (Z-score scaled)."""
+    fig, axes = plt.subplots(1, 3, figsize=(21, 6))
+    colors, labs = ["#2980b9", "#c0392b"], ["Original", f"Normalized ({method_name})"]
+    
+    for i, (data, col, label) in enumerate(zip([orig_data, norm_data], colors, labs)):
+        sns.ecdfplot(data, color=col, label=label, ax=axes[i], lw=2)
+        axes[i].set_title(f"ECDF — {label}"); axes[i].grid(ls='--', alpha=0.5); axes[i].legend()
+
+    def _z(arr): return (arr - arr.mean()) / (arr.std() + 1e-10)
+    oz, nz = _z(orig_data), _z(norm_data)
+    sns.ecdfplot(oz, color=colors[0], label="Original (z-scaled)", ax=axes[2], lw=2)
+    sns.ecdfplot(nz, color=colors[1], label="Normalized (z-scaled)", ax=axes[2], lw=2, ls='--')
+    
+    # D-stat annotation
+    so = np.sort(oz)
+    eo, en = np.arange(1, len(so)+1)/len(so), np.searchsorted(np.sort(nz), so, side='right')/len(nz)
+    idx = np.argmax(np.abs(eo - en))
+    axes[2].annotate('', xy=(so[idx], en[idx]), xytext=(so[idx], eo[idx]), arrowprops=dict(arrowstyle='<->', color='orange', lw=2))
+    axes[2].set_title("ECDF Overlay (z-scaled)"); axes[2].grid(ls='--', alpha=0.5); axes[2].legend()
+
+    alpha = 0.05
+    res = "Chấp nhận H₀: Tương đồng" if p_value > alpha else "Bác bỏ H₀: Khác biệt"
+    clr = '#1a7a1a' if p_value > alpha else '#b30000'
+    fig.text(0.5, -0.05, f"K-S Stat D = {d_stat:.4f}  |  p = {p_value:.4e}  |  {res}", 
+             ha='center', fontsize=12, color=clr, fontweight='bold', bbox=dict(boxstyle='round', facecolor='lightyellow', alpha=0.9, edgecolor=clr))
+    
+    plt.suptitle(f"K-S Test Summary — Method: {method_name}", fontsize=16, fontweight='bold', y=1.03)
+    plt.tight_layout(); plt.show()
+ 
+def plot_ks_comparison_summary(ks_results: list, alpha: float = 0.05):
+    methods  = [r["Method"] for r in ks_results]
+    d_stats  = [float(r["K-S Stat (D)"]) for r in ks_results]
+    p_values = [max(float(r["p-value"]), 1e-300) for r in ks_results]
+ 
+    colors_accept = '#4CAF50'
+    colors_reject = '#f44336'
+    bar_colors = [colors_accept if p > alpha else colors_reject for p in p_values]
+ 
+    fig, axes = plt.subplots(1, 2, figsize=(16, 6))
+ 
+    # ── Subplot 1: D-statistic ────────────────────────────────────────
+    bars_d = axes[0].bar(methods, d_stats, color=bar_colors,
+                         edgecolor='black', alpha=0.85)
+    axes[0].set_title("So sánh K-S Statistic (D)", fontsize=14, fontweight='bold')
+    axes[0].set_xlabel("Phương pháp chuẩn hóa", fontsize=12)
+    axes[0].set_ylabel("K-S Statistic D  ∈  [0, 1]", fontsize=12)
+    axes[0].set_ylim(0, max(d_stats) * 1.45 if max(d_stats) > 0 else 0.01)
+    axes[0].grid(axis='y', linestyle='--', alpha=0.5)
+ 
+    for bar, d_val in zip(bars_d, d_stats):
+        bar_h = bar.get_height()
+        y_pos = bar_h + max(d_stats) * 0.02
+        va    = 'bottom'
+        if bar_h < max(d_stats) * 0.05:
+            y_pos = bar_h / 2 if bar_h > 0 else 0.001
+            va    = 'center'
+        axes[0].text(bar.get_x() + bar.get_width() / 2, y_pos,
+                     f'{d_val:.6f}', ha='center', va=va,
+                     fontsize=10, fontweight='bold',
+                     color='white' if va == 'center' else 'black')
+ 
+    legend_elems = [
+        mpatches.Patch(facecolor=colors_accept, edgecolor='black', label='Chấp nhận H₀ (p > α)'),
+        mpatches.Patch(facecolor=colors_reject, edgecolor='black', label='Bác bỏ H₀ (p ≤ α)'),
+    ]
+    axes[0].legend(handles=legend_elems, loc='upper right', fontsize=10)
+ 
+    # ── Subplot 2: p-value ────────────────────────────────────────────
+    p_max, p_min = max(p_values), min(p_values)
+    use_log = (p_max / p_min > 100) if p_min > 0 else True
+ 
+    if use_log:
+        p_log    = [np.log10(p) for p in p_values]
+        alpha_log = np.log10(alpha)
+        bars_p = axes[1].bar(methods, p_log, color=bar_colors,
+                             edgecolor='black', alpha=0.85)
+        axes[1].axhline(y=alpha_log, color='orange', linestyle='--',
+                        linewidth=2, label=f'Ngưỡng α = {alpha}  (log₁₀={alpha_log:.2f})')
+        axes[1].set_ylabel("log₁₀(p-value)", fontsize=12)
+ 
+        for bar, p_val, lv in zip(bars_p, p_values, p_log):
+            label       = "Accept H₀" if p_val > alpha else "Reject H₀"
+            label_color = '#2E7D32' if p_val > alpha else '#C62828'
+            p_str       = f"{p_val:.2e}" if p_val < 0.001 else f"{p_val:.4f}"
+            axes[1].text(bar.get_x() + bar.get_width() / 2,
+                         lv + abs(min(p_log)) * 0.03 + 0.1,
+                         f'{p_str}\n({label})',
+                         ha='center', va='bottom', fontsize=9,
+                         fontweight='bold', color=label_color)
+        axes[1].set_title("So sánh p-value (log₁₀ scale)", fontsize=14, fontweight='bold')
+    else:
+        bars_p = axes[1].bar(methods, p_values, color=bar_colors,
+                             edgecolor='black', alpha=0.85)
+        axes[1].axhline(y=alpha, color='orange', linestyle='--',
+                        linewidth=2, label=f'Ngưỡng α = {alpha}')
+        axes[1].set_ylim(0, 1.1)
+        axes[1].set_ylabel("p-value  ∈  [0, 1]", fontsize=12)
+ 
+        for bar, p_val in zip(bars_p, p_values):
+            label       = "Accept H₀" if p_val > alpha else "Reject H₀"
+            label_color = '#2E7D32' if p_val > alpha else '#C62828'
+            p_str       = f"{p_val:.2e}" if p_val < 0.001 else f"{p_val:.4f}"
+            y_pos = min(p_val + 0.03, 1.05)
+            axes[1].text(bar.get_x() + bar.get_width() / 2, y_pos,
+                         f'{p_str}\n({label})',
+                         ha='center', va='bottom', fontsize=9,
+                         fontweight='bold', color=label_color)
+        axes[1].set_title("So sánh p-value (linear scale)", fontsize=14, fontweight='bold')
+ 
+    axes[1].set_xlabel("Phương pháp chuẩn hóa", fontsize=12)
+    axes[1].grid(axis='y', linestyle='--', alpha=0.5)
+    axes[1].legend(fontsize=11)
+ 
+    plt.suptitle(
+        "Tổng hợp Kiểm định Kolmogorov-Smirnov: So sánh các Phương pháp Chuẩn hóa",
+        fontsize=15, fontweight='bold', y=1.02
+    )
     plt.tight_layout()
     plt.show()
