@@ -2,6 +2,8 @@ import matplotlib.pyplot as plt
 import cv2
 import seaborn as sns
 import numpy as np
+import pandas as pd
+from typing import Dict
 
 def plot_deduplicate_comparison(initial_count, final_count):
     """
@@ -193,5 +195,71 @@ def plot_rolling_statistics(dates, values, feature_name, stat_type="Mean", regio
     plt.grid(True, linestyle='--', alpha=0.5)
     plt.xticks(rotation=45)
     
+    plt.tight_layout()
+    plt.show()
+
+# Yêu cầu: Hàm vẽ plot time và chấm điểm khả nghi của 1 PHƯƠNG PHÁP
+def plot_anomalies_single_method(dataset, anomaly_mask: np.ndarray, method_name: str = "Unknown Method"):
+    """
+    Plots a Time Plot with anomalies for a specific method.
+    """
+    if dataset.data is None or dataset.target is None:
+        raise ValueError("Dataset is not loaded or target is not set.")
+
+    time_col = dataset.data[dataset._time_column]
+    values = dataset.target
+
+    plt.figure(figsize=(16, 6))
+    
+    # Plot original data line
+    plt.plot(time_col, values, label='Original Data (Target)', color='steelblue', alpha=0.7, linewidth=1.5)
+    
+    # Scatter anomaly points
+    plt.scatter(time_col[anomaly_mask], values[anomaly_mask], 
+                color='red', label=f'Anomalies ({method_name})', 
+                s=50, zorder=5, edgecolors='black')
+
+    plt.title(f'Anomaly Detection - Method: {method_name}', fontsize=14, fontweight='bold')
+    plt.xlabel('Time', fontsize=12)
+    plt.ylabel(dataset._target_column, fontsize=12)
+    plt.legend()
+    plt.grid(True, linestyle='--', alpha=0.6)
+    plt.tight_layout()
+    plt.show()
+
+# Yêu cầu: Hàm vẽ và chấm điểm khả nghi của TẤT CẢ PHƯƠNG PHÁP
+def plot_anomalies_all_methods(dataset, anomalies_dict: Dict[str, np.ndarray]):
+    """
+    Plots a Time Plot and simultaneously displays anomalies from multiple methods.
+    anomalies_dict: Dictionary with method name as key and boolean mask array as value.
+    Ex: {'Z-Score': mask1, 'Isolation Forest': mask2, 'STL': mask3}
+    """
+    if dataset.data is None or dataset.target is None:
+        raise ValueError("Dataset is not loaded or target is not set.")
+
+    time_col = dataset.data[dataset._time_column]
+    values = dataset.target
+
+    plt.figure(figsize=(16, 8))
+    
+    # Plot original data line
+    plt.plot(time_col, values, label='Original Data', color='gray', alpha=0.5, linewidth=1.5)
+    
+    # Color palette for differentiating methods
+    color_palette = ['red', 'orange', 'purple', 'green', 'magenta']
+    
+    # Scatter each method onto the plot
+    for idx, (method_name, mask) in enumerate(anomalies_dict.items()):
+        color = color_palette[idx % len(color_palette)]
+        plt.scatter(time_col[mask], values[mask], 
+                    color=color, label=f'{method_name} ({mask.sum()} pts)', 
+                    s=60 - (idx*10), # Decrease size gradually to keep them visible if overlapped
+                    zorder=5+idx, alpha=0.8, edgecolors='black')
+
+    plt.title('Comparison of Anomalies Across Methods', fontsize=15, fontweight='bold')
+    plt.xlabel('Time', fontsize=12)
+    plt.ylabel(dataset._target_column, fontsize=12)
+    plt.legend(loc='upper left', bbox_to_anchor=(1.02, 1))
+    plt.grid(True, linestyle='--', alpha=0.6)
     plt.tight_layout()
     plt.show()
