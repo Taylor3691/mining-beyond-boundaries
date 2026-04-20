@@ -5,11 +5,11 @@ from typing import Any, Dict
 from config import SUPPORT_NORMALIZATION_METHOD,DEFAULT_NORMALIZATION_METHOD, DEFAULT_EPSILON
 import cv2
 import os
-import time
 from sklearn.linear_model import SGDClassifier
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 from sklearn.model_selection import train_test_split
 from sklearn.decomposition import IncrementalPCA
+from scipy import stats
 
 class Normalization(Preprocessing):
     def __init__(self,
@@ -118,7 +118,7 @@ class Normalization(Preprocessing):
         min_val = self._stats['min']
         max_val = self._stats['max']
         return 2 * (arr_float - min_val) / (max_val - min_val + self._eps) - 1
-
+    
     def _transform_zscore_global(self, arr: np.ndarray):
         # công thức: (x - mean) / std với mean, std tính trên toàn bộ ảnh
         arr_float = arr.astype(np.float32)
@@ -242,7 +242,6 @@ class NormalizationEvaluator(Normalization):
 
     def evaluation(self, n_repeats: int = 3, max_epochs: int = 30):
         print(f"\n[EVALUATION] Train SGD Logistic Regression ({self._method})...")
-        start_time = time.time()
         
         X = self._transformed_data_cache
         y = np.array(self._labels)
@@ -282,6 +281,34 @@ class NormalizationEvaluator(Normalization):
         avg_metrics = {k: np.mean([m[k] for m in metrics_history]) for k in metrics_history[0].keys()}
         avg_curve = np.mean(learning_curves, axis=0).tolist()
         
-        print(f"[RESULT] {self._method} (Mất {time.time() - start_time:.1f}s) - F1: {avg_metrics['f1_score']:.4f}\n")
+        print(f"[RESULT] {self._method} - F1: {avg_metrics['f1_score']:.4f}\n")
         
         return avg_metrics, avg_curve
+
+    def kolmogorov_smirnov_test(self, image_orig: np.ndarray = None, image_norm: np.ndarray = None, sample_size: int = 10000):
+        """
+        Thực hiện kiểm định Two-Sample Kolmogorov-Smirnov (K-S Test) để đánh giá 
+        sự biến đổi của phân phối pixel trước và sau khi chuẩn hóa.
+        
+        Phương pháp này được thực hiện trên phân phối pixel thô (raw) để xác nhận 
+        rằng dữ liệu đã được ánh xạ thành công sang miền giá trị mới. 
+        Ghi chú: Kết quả thống kê D ≈ 1.0 và p-value ≈ 0.0 là kết quả mong đợi, 
+        khẳng định phép chuẩn hóa đã thay đổi miền phân phối một cách đáng kể.
+        """
+        if image_orig is None or image_norm is None:
+            if self._raw_uint8_cache is None:
+                print("   [ERROR] Không có dữ liệu cache."); return 0.0, 1.0, np.array([]), np.array([])
+            
+            # Lấy mẫu từ cache (max 50 ảnh)
+            indices = np.random.choice(len(self._raw_uint8_cache), min(len(self._raw_uint8_cache), 50), replace=False)
+            orig_flat = np.concatenate([self._raw_uint8_cache[i].flatten() for i in indices]).astype(np.float32)
+            norm_flat = np.concatenate([self.transform(self._raw_uint8_cache[i:i+1])[0].flatten() for i in indices]).astype(np.float32)
+        else:
+            orig_flat, norm_flat = image_orig.flatten().astype(np.float32), image_norm.flatten().astype(np.float32)
+        
+        if len(orig_flat) > sample_size:
+            idx = np.random.choice(len(orig_flat), sample_size, replace=False)
+            orig_flat, norm_flat = orig_flat[idx], norm_flat[idx]
+            
+        d_stat, p_value = stats.ks_2samp(orig_flat, norm_flat)
+        return d_stat, p_value, orig_flat, norm_flat

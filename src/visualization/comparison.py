@@ -41,10 +41,6 @@ def plot_phash_comparison(img1, img2, hash1, hash2, distance, title="pHash Compa
         distance (int): Calculated Hamming distance between the two hashes.
         title (str): Title for the visualization.
     """
-    # Convert BGR to RGB for correct display in Matplotlib
-    img1_rgb = cv2.cvtColor(img1, cv2.COLOR_BGR2RGB)
-    img2_rgb = cv2.cvtColor(img2, cv2.COLOR_BGR2RGB)
-    
     fig, axes = plt.subplots(1, 2, figsize=(14, 6))
     
     # Set title color: Green if similar (<=10), Red if different (>10)
@@ -53,53 +49,57 @@ def plot_phash_comparison(img1, img2, hash1, hash2, distance, title="pHash Compa
                  fontsize=14, fontweight='bold', color=status_color)
     
     # Plot Image 1 (Original/Reference)
-    axes[0].imshow(img1_rgb)
+    axes[0].imshow(img1)
     axes[0].set_title(f"Original / Side A\nHash: {hash1}", fontsize=9, family='monospace')
     axes[0].axis('off')
     
     # Plot Image 2 (Transformed/Duplicate)
-    axes[1].imshow(img2_rgb)
+    axes[1].imshow(img2)
     axes[1].set_title(f"Transformed / Side B\nHash: {hash2}", fontsize=9, family='monospace')
     axes[1].axis('off')
     
     plt.tight_layout()
     plt.show()
 
-def plot_normalization_comparison(img_orig: np.ndarray, img_norm: np.ndarray, method_name: str):
-    fig, axes = plt.subplots(2, 3, figsize=(18, 10))
+def plot_normalization_comparison(img_orig: np.ndarray, img_norm: np.ndarray, method: str):
+    """
+    Vẽ biểu đồ so sánh trực quan giữa ảnh gốc và ảnh sau khi chuẩn hóa, 
+    kèm theo phân phối Histogram và KDE cho từng kênh màu (RGB).
     
-    h, w = img_orig.shape[:2]
-    cy, cx = h // 2, w // 2
-    
-    # histogram với heatmap dùng channel red
-    patches = [img_orig[cy-5:cy+5, cx-5:cx+5, 0], img_norm[cy-5:cy+5, cx-5:cx+5, 0]]
-    hist_data = [img_orig[:,:,0].flatten(), img_norm[:,:,0].flatten()]
-    
-    img_norm_disp = (img_norm - img_norm.min()) / (img_norm.max() - img_norm.min() + 1e-8)
-    images_disp = [img_orig, img_norm_disp]
-    
-    is_diverging = img_norm.min() < 0
-    titles = ["Original", f"Normalized ({method_name})"]
+    Args:
+        img_orig (np.ndarray): Mảng ảnh gốc (uint8).
+        img_norm (np.ndarray): Mảng ảnh đã chuẩn hóa (float32).
+        method (str): Tên phương pháp chuẩn hóa dùng trong tiêu đề.
+    """
+    # Xử lý hiển thị: Ảnh gốc giữ nguyên, ảnh chuẩn hóa được chuẩn hóa hiển thị về [0, 255]
+    orig_rgb = img_orig
+    norm_disp = (img_norm - img_norm.min()) / (img_norm.max() - img_norm.min() + 1e-8)
+    norm_rgb = (norm_disp * 255).astype(np.uint8) if img_norm.ndim == 3 else norm_disp
 
-    for i in range(2):
-        # ảnh gốc
-        axes[i, 0].imshow(images_disp[i])
-        axes[i, 0].set_title(f"{titles[i]} Image")
-        axes[i, 0].axis('off')
+    fig, axes = plt.subplots(2, 4, figsize=(20, 8))
+    titles = ["Original", f"Normalized ({method})"]
+    imgs, data = [orig_rgb, norm_rgb], [img_orig, img_norm]
+    colors = ['red', 'green', 'blue']
 
-        # histogram
-        sns.histplot(hist_data[i], bins=50, kde=(i==1), 
-                     color='gray' if i==0 else 'blue', ax=axes[i, 1])
-        axes[i, 1].set_title(f"{titles[i]} Distribution (Channel 0)")
-
-        # heatmap
-        sns.heatmap(patches[i], annot=True, fmt=".0f" if i==0 else ".3f", 
-                    cmap="Blues" if i==0 else ("coolwarm" if is_diverging else "viridis"), 
-                    center=0 if (i==1 and is_diverging) else None,
-                    ax=axes[i, 2], cbar=True)
-        axes[i, 2].set_title(f"{titles[i]} ROI (Center 10x10)")
-
-    plt.suptitle(f"Method: {method_name}", fontsize=16, fontweight='bold', y=1.02)
+    for r in range(2):
+        # Cột 0: Hiển thị hình ảnh
+        axes[r, 0].imshow(imgs[r])
+        axes[r, 0].set_title(titles[r])
+        axes[r, 0].axis('off')
+        
+        # Cột 1-3: Hiển thị phân phối pixel từng kênh R, G, B
+        for c in range(3):
+            ax = axes[r, c+1]
+            ch_data = data[r][:, :, c].flatten()
+            
+            # Vẽ Histogram và đường KDE chồng lên nhau
+            ax.hist(ch_data, bins=100, color=colors[c], alpha=0.6, density=True)
+            sns.kdeplot(ch_data, ax=ax, color=colors[c], lw=1.5)
+            
+            ax.set_title(f"{colors[c].capitalize()} Channel")
+            ax.grid(alpha=0.3)
+            
+    plt.suptitle(f"Normalization Comparison Analysis: {method}", fontsize=16, fontweight='bold')
     plt.tight_layout()
     plt.show()
 
