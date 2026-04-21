@@ -3,7 +3,7 @@ import pandas as pd
 from pathlib import Path
 import cv2
 import numpy as np
-import pandas as pd 
+import pandas as pd
 
 def batch_loader(paths: list[str], batch_size: int = config.BATCH_SIZE):
     for i in range(0, len(paths), batch_size):
@@ -48,7 +48,6 @@ def load_image_paths(path: str):
 
     return paths, labels, filenames
 
-"""
 def load_table(path: str):
     try:
         df = pd.read_csv(path, low_memory=False)
@@ -70,8 +69,10 @@ def save_images(path: str, images: np.ndarray, file_names: list[str], is_classwi
             cv2.imwrite(str(folder_save/ name), image)
     return
 
-def save_table(path: str, data: pd.DataFrame):
+def save_table(path: str, data: pd.DataFrame, file_name: str = "processed_data.csv"):
     try:
-        data.to_csv(path, index=False) 
+        folder = Path(path)
+        folder.mkdir(parents=True, exist_ok=True)
+        data.to_csv(folder / file_name, index=False)
     except Exception as e:
         raise IOError(f"Error saving CSV file to {path}: {e}")

@@ -2,6 +2,8 @@ import matplotlib.pyplot as plt
 import cv2
 import seaborn as sns
 import numpy as np
+import pandas as pd
+from typing import Dict
 
 def plot_deduplicate_comparison(initial_count, final_count):
     """
@@ -130,5 +132,134 @@ def plot_feature_selection_comparison(k_list, results_dict):
     plt.xticks(k_list)
     plt.legend(title="Method", fontsize=11, title_fontsize=12, loc='lower right')
     plt.grid(True, linestyle='--', alpha=0.5)
+    plt.tight_layout()
+    plt.show()
+
+def plot_time_series(dates, values, feature_name, region="World"):
+    """
+    Trực quan hóa chuỗi thời gian để phân tích Trend, Seasonality và Noise bằng mắt.
+    """
+    plt.figure(figsize=(15, 6))
+    
+    # 1. Vẽ dữ liệu gốc (Thường có nhiều Noise và Seasonality)
+    plt.plot(dates, values, label='Daily Raw Data', color='#1f77b4', linewidth=1.5, alpha=0.6)
+    
+    # 2. Vẽ đường Trung bình trượt 7 ngày để ép phẳng nhiễu, làm lộ ra Trend
+    rolling_mean = values.rolling(window=7, min_periods=1).mean()
+    plt.plot(dates, rolling_mean, label='7-Day Moving Average (Trend focus)', color='red', linewidth=2.5)
+    
+    plt.title(f"Time Plot of {feature_name} in {region}", fontsize=16, fontweight='bold', pad=15)
+    plt.xlabel("Date", fontsize=12)
+    plt.ylabel(f"Number of {feature_name}", fontsize=12)
+    
+    # Format trục X cho dễ nhìn ngày tháng
+    plt.xticks(rotation=45)
+    plt.grid(True, linestyle='--', alpha=0.5)
+    plt.legend(fontsize=11)
+    
+    plt.tight_layout()
+    plt.show()
+    
+def plot_rolling_statistics(dates, values, feature_name, stat_type="Mean", region="World"):
+    """
+    Vẽ 4 đường trên cùng 1 biểu đồ: Data gốc, Window 7, 30, 90 cho Mean hoặc STD.
+    """
+    plt.figure(figsize=(15, 7))
+    
+    # Vẽ dữ liệu gốc
+    plt.plot(dates, values, label='Daily Raw Data', color='lightgray', alpha=0.8, linewidth=1.5)
+    
+    # Tính toán và vẽ các đường Rolling
+    if stat_type.lower() == "mean":
+        roll_7 = values.rolling(window=7, min_periods=1).mean()
+        roll_30 = values.rolling(window=30, min_periods=1).mean()
+        roll_90 = values.rolling(window=90, min_periods=1).mean()
+        title_stat = "Rolling Mean"
+    elif stat_type.lower() == "std":
+        roll_7 = values.rolling(window=7, min_periods=1).std().fillna(0) # Tránh NaN ở những ngày đầu
+        roll_30 = values.rolling(window=30, min_periods=1).std().fillna(0)
+        roll_90 = values.rolling(window=90, min_periods=1).std().fillna(0)
+        title_stat = "Rolling Standard Deviation (STD)"
+    else:
+        raise ValueError("[ERROR] stat_type chỉ nhận 'Mean' hoặc 'STD'")
+
+    # Vẽ 3 đường Rolling với độ dày và màu sắc khác nhau
+    plt.plot(dates, roll_7, label=f'7-Day {title_stat} (Short-term)', color='blue', linewidth=1.5)
+    plt.plot(dates, roll_30, label=f'30-Day {title_stat} (Mid-term)', color='orange', linewidth=2.5)
+    plt.plot(dates, roll_90, label=f'90-Day {title_stat} (Long-term)', color='red', linewidth=3.5)
+
+    plt.title(f"{title_stat} of {feature_name} in {region}", fontsize=16, fontweight='bold', pad=15)
+    plt.xlabel("Date", fontsize=12)
+    plt.ylabel(f"Value ({stat_type})", fontsize=12)
+    plt.legend(fontsize=11, loc='upper left')
+    plt.grid(True, linestyle='--', alpha=0.5)
+    plt.xticks(rotation=45)
+    
+    plt.tight_layout()
+    plt.show()
+
+# Yêu cầu: Hàm vẽ plot time và chấm điểm khả nghi của 1 PHƯƠNG PHÁP
+def plot_anomalies_single_method(dataset, anomaly_mask: np.ndarray, method_name: str = "Unknown Method"):
+    """
+    Plots a Time Plot with anomalies for a specific method.
+    """
+    if dataset.data is None or dataset.target is None:
+        raise ValueError("Dataset is not loaded or target is not set.")
+
+    time_col = dataset.data[dataset._time_column]
+    values = dataset.target
+
+    plt.figure(figsize=(16, 6))
+    
+    # Plot original data line
+    plt.plot(time_col, values, label='Original Data (Target)', color='steelblue', alpha=0.7, linewidth=1.5)
+    
+    # Scatter anomaly points
+    plt.scatter(time_col[anomaly_mask], values[anomaly_mask], 
+                color='red', label=f'Anomalies ({method_name})', 
+                s=50, zorder=5, edgecolors='black')
+
+    plt.title(f'Anomaly Detection - Method: {method_name}', fontsize=14, fontweight='bold')
+    plt.xlabel('Time', fontsize=12)
+    plt.ylabel(dataset._target_column, fontsize=12)
+    plt.legend()
+    plt.grid(True, linestyle='--', alpha=0.6)
+    plt.tight_layout()
+    plt.show()
+
+# Yêu cầu: Hàm vẽ và chấm điểm khả nghi của TẤT CẢ PHƯƠNG PHÁP
+def plot_anomalies_all_methods(dataset, anomalies_dict: Dict[str, np.ndarray]):
+    """
+    Plots a Time Plot and simultaneously displays anomalies from multiple methods.
+    anomalies_dict: Dictionary with method name as key and boolean mask array as value.
+    Ex: {'Z-Score': mask1, 'Isolation Forest': mask2, 'STL': mask3}
+    """
+    if dataset.data is None or dataset.target is None:
+        raise ValueError("Dataset is not loaded or target is not set.")
+
+    time_col = dataset.data[dataset._time_column]
+    values = dataset.target
+
+    plt.figure(figsize=(16, 8))
+    
+    # Plot original data line
+    plt.plot(time_col, values, label='Original Data', color='gray', alpha=0.5, linewidth=1.5)
+    
+    # Color palette for differentiating methods
+    color_palette = ['red', 'orange', 'purple', 'green', 'magenta']
+    
+    # Scatter each method onto the plot
+    for idx, (method_name, mask) in enumerate(anomalies_dict.items()):
+        color = color_palette[idx % len(color_palette)]
+        plt.scatter(time_col[mask], values[mask], 
+                    color=color, label=f'{method_name} ({mask.sum()} pts)', 
+                    s=60 - (idx*10), # Decrease size gradually to keep them visible if overlapped
+                    zorder=5+idx, alpha=0.8, edgecolors='black')
+
+    plt.title('Comparison of Anomalies Across Methods', fontsize=15, fontweight='bold')
+    plt.xlabel('Time', fontsize=12)
+    plt.ylabel(dataset._target_column, fontsize=12)
+    plt.legend(loc='upper left', bbox_to_anchor=(1.02, 1))
+    plt.grid(True, linestyle='--', alpha=0.6)
     plt.tight_layout()
     plt.show()
