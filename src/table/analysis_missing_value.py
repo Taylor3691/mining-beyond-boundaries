@@ -4,7 +4,7 @@ import missingno as msno
 import matplotlib.pyplot as plt
 from IPython.display import display, Markdown
 from core.service_base import Visualization 
-from dataset import TableDataset  
+from table.dataset import TableDataset  
 
 class MissingValueMatrix(Visualization):
     def __init__(self, drop_threshold: float = 40.0):
@@ -42,7 +42,17 @@ class MissingValueMatrix(Visualization):
             self._status = "Success"
         except Exception as e:
             self._status = f"Failed — {str(e)}"
+    def visitImageDataset(self, obj):
+        # Từ chối khéo léo vì thuật toán này không dùng cho ảnh
+        self._status = "Failed — MissingValueMatrix không hỗ trợ tập dữ liệu Ảnh (ImageDataset)."
 
+    def visitTextDataset(self, obj):
+        # Bổ sung luôn phòng trường hợp lớp cha yêu cầu
+        self._status = "Failed — MissingValueMatrix không hỗ trợ tập dữ liệu Văn bản (TextDataset)."
+
+    def visitTimeSeriesDataset(self, obj):
+        # Bổ sung luôn phòng trường hợp lớp cha yêu cầu
+        self._status = "Failed — MissingValueMatrix không hỗ trợ tập dữ liệu Chuỗi thời gian (TimeSeriesDataset)."
     def log(self):
         print("=" * 55)
         print(f"Step    : {self._step_name}")
@@ -76,23 +86,29 @@ class MissingValueMatrix(Visualization):
             self._missing_stats['corr'] = None
 
     def _plot_visualizations(self):
-        # Thiết lập để 2 biểu đồ hiển thị liên tiếp
-        fig = plt.figure(figsize=(15, 6))
+        # 1. TỐI ƯU CỘT: Vẫn nên giữ việc lọc các cột CÓ DỮ LIỆU THIẾU để trục X bớt chật
+        missing_cols = self._df.columns[self._df.isnull().any()].tolist()
+        df_plot = self._df[missing_cols] if len(missing_cols) > 0 else self._df
         
-        # 1. Ma trận thiếu (Matrix)
+        # 2. KÉO DÃN KHUNG HÌNH: Tăng size lên 30x12 (Cực rộng)
+        fig = plt.figure(figsize=(30, 12))
+        
+        # 3. Ma trận thiếu (Matrix) - CHẠY FULL DÒNG
         ax1 = fig.add_subplot(121)
-        msno.matrix(self._df, ax=ax1, sparkline=False, fontsize=10, color=(0.2, 0.4, 0.6))
-        ax1.set_title("Ma trận Dữ liệu thiếu (Trắng là thiếu)", fontsize=14, pad=20)
+        # sparkline=False để bỏ cái đường loằng ngoằng bên phải, dành diện tích cho chữ
+        msno.matrix(df_plot, ax=ax1, sparkline=False, fontsize=10, color=(0.2, 0.4, 0.6))
+        ax1.set_title(f"Ma trận Dữ liệu thiếu (Toàn bộ {len(self._df)} dòng)", fontsize=20, pad=40)
         
-        # 2. Heatmap tương quan thiếu
+        # 4. Heatmap tương quan thiếu
         ax2 = fig.add_subplot(122)
         if self._missing_stats['corr'] is not None:
             msno.heatmap(self._df, ax=ax2, fontsize=10, cmap="coolwarm")
-            ax2.set_title("Tương quan Thiếu (Missingness Correlation)", fontsize=14, pad=20)
+            ax2.set_title("Tương quan Thiếu (Missingness Correlation)", fontsize=20, pad=40)
         else:
             ax2.text(0.5, 0.5, "Không đủ cột thiếu để vẽ tương quan", ha='center', va='center')
             
-        plt.tight_layout()
+        # 5. CÁCH LÝ CHỮ: Tăng wspace=0.5 để đẩy 2 hình xa nhau ra
+        plt.subplots_adjust(wspace=0.5, bottom=0.2) 
         plt.show()
 
     def _analyze(self):
