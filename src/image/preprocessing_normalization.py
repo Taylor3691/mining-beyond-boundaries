@@ -16,6 +16,7 @@ class Normalization(Preprocessing):
                  method: str = DEFAULT_NORMALIZATION_METHOD,
                  eps: float = DEFAULT_EPSILON
                  ):
+        """Khởi tạo lớp chuẩn hóa dữ liệu ảnh."""
         if method not in SUPPORT_NORMALIZATION_METHOD:
             raise ValueError("Method not support")
         
@@ -23,12 +24,13 @@ class Normalization(Preprocessing):
         self._eps = eps
         self._stats : Dict[str, Any] = {}
         return
-    
+
     @property
     def stats(self):
         return self._stats
         
     def fit(self, arr: np.ndarray):
+        """Tính toán các thông số thống kê cần thiết."""
         if self._method in ("minmax_01", "minmax_m11"):
             self._fit_minmax(arr)
         elif self._method == "zscore_global":
@@ -37,6 +39,7 @@ class Normalization(Preprocessing):
             self._fit_zscore_channel(arr)
     
     def transform(self, arr: np.ndarray) -> np.ndarray:
+        """Áp dụng công thức chuẩn hóa lên dữ liệu."""
         if self._method == "minmax_01":
             return self._transform_minmax_01(arr)
         if self._method == "minmax_m11":
@@ -48,22 +51,21 @@ class Normalization(Preprocessing):
         raise ValueError(f"Unsupported method: {self._method}")
     
     def fit_transform(self, arr: np.ndarray):
+        """Thực hiện cả tính toán thông số và chuẩn hóa."""
         self.fit(arr)
         return self.transform(arr)
 
     def run(self, obj: ImageDataset):
+        """Thực thi quy trình chuẩn hóa trên tập dữ liệu."""
         if isinstance(obj, ImageDataset):
             self.visitImageDataset(obj)
         return
-    
+
     def visitImageDataset(self, obj: ImageDataset):
+        """Xử lý chuẩn hóa cụ thể cho ImageDataset."""
         try:
             images, labels = obj.images
-            
-            # chuẩn hóa ảnh
             normalized_images = self.fit_transform(images)
-            
-            # Gán mảng đã chuẩn hóa vào đối tượng dataset
             obj._images = (normalized_images, labels)
         except Exception as e:
             print(f"Error: {e}")
@@ -72,40 +74,48 @@ class Normalization(Preprocessing):
         return
 
     def log(self):
+        """In thông số thống kê đã tính toán."""
         print(f"Method: {self._method}")
-        
         for key, value in self._stats.items():
             if isinstance(value, np.ndarray):
-                # Làm tròn để in cho đẹp, chuyển sang list để dễ nhìn
                 formatted_val = np.round(value, 4).tolist()
                 print(f"  - {key}: {formatted_val}")
             else:
-                # In giá trị scalar (float)
                 print(f"  - {key}: {value:.4f}")
         return
     
     def _fit_minmax(self, arr: np.ndarray):
+        """Tính Min và Max của mảng dữ liệu."""
         arr_float = arr.astype(np.float32)
         self._stats['min'] = np.min(arr_float)
         self._stats['max'] = np.max(arr_float)
         return
     
     def _fit_zscore_global(self, arr: np.ndarray):
+        """Tính Mean và STD toàn cục."""
         arr_float = arr.astype(np.float32)
         self._stats['mean'] = np.mean(arr_float)
         self._stats['std'] = np.std(arr_float)
         return
     
     def _fit_zscore_channel(self, arr: np.ndarray):
-        # tính stats cho từng channel
+        """Tính Mean và STD cho từng kênh màu."""
         arr_float = arr.astype(np.float32)
-        # lấy tất cả các trục trừ trục cuối cùng (channel), vd: (N,H,W,C), (H,W,C)
         axes = tuple(range(arr_float.ndim - 1))
         self._stats['mean'] = np.mean(arr_float, axis=axes)
         self._stats['std'] = np.std(arr_float, axis=axes)
         return
     
     def _transform_minmax_01(self, arr: np.ndarray):
+        """
+        Nén dữ liệu về khoảng [0, 1].
+
+        Input:
+            arr: Mảng numpy.
+
+        Output:
+            Mảng numpy sau khi nén.
+        """
         # công thức: (x - min) / (max - min)
         arr_float = arr.astype(np.float32)
         min_val = self._stats['min']
@@ -113,21 +123,21 @@ class Normalization(Preprocessing):
         return (arr_float - min_val) / (max_val - min_val + self._eps)
     
     def _transform_minmax_m11(self, arr: np.ndarray):
-        # công thức range bất kì : ((x - min) / (max - min)) * (max_range - min_range) - 1
+        """Nén dữ liệu về khoảng [-1, 1]."""
         arr_float = arr.astype(np.float32)
         min_val = self._stats['min']
         max_val = self._stats['max']
         return 2 * (arr_float - min_val) / (max_val - min_val + self._eps) - 1
     
     def _transform_zscore_global(self, arr: np.ndarray):
-        # công thức: (x - mean) / std với mean, std tính trên toàn bộ ảnh
+        """Chuẩn hóa Z-score toàn cục."""
         arr_float = arr.astype(np.float32)
         mean = self._stats['mean']
         std = self._stats['std']
         return (arr_float - mean) / (std + self._eps)
     
     def _transform_zscore_channel(self, arr: np.ndarray):
-        # công thức: (x - mean) / std với mean, std tính trên từng channel
+        """Chuẩn hóa Z-score theo kênh màu."""
         arr_float = arr.astype(np.float32)
         mean = self._stats['mean']
         std = self._stats['std']
@@ -135,16 +145,16 @@ class Normalization(Preprocessing):
 
 class NormalizationEvaluator(Normalization):
     """
-    Class kế thừa từ Normalization gốc.
-    Bổ sung các tính năng chống tràn RAM (Chunking), xuất file ảnh và đánh giá SGDClassifier.
+    Class kế thừa từ Normalization gốc hỗ trợ đánh giá mô hình.
     """
     def __init__(self, method: str = DEFAULT_NORMALIZATION_METHOD, eps: float = DEFAULT_EPSILON):
+        """Khởi tạo bộ đánh giá chuẩn hóa tối ưu bộ nhớ."""
         super().__init__(method=method, eps=eps)
         self._transformed_data_cache = None 
         self._raw_uint8_cache = None
 
     def visitImageDataset(self, obj: ImageDataset):
-        """Ghi đè hàm visit để dùng kỹ thuật toán học Chunking chống OOM"""
+        """Xử lý chuẩn hóa an toàn bộ nhớ bằng kỹ thuật chunking."""
         try:
             print(f"   [INFO] Kích hoạt Chế độ Chống Tràn RAM (Toán học Chunking)...")
             total_images = len(obj._file_names)
@@ -215,6 +225,7 @@ class NormalizationEvaluator(Normalization):
         return
 
     def save_images(self, base_dir: str = "../data/preprocessing/normalization"):
+        """Lưu các ảnh đã chuẩn hóa ra ổ cứng phục vụ so sánh."""
         if self._raw_uint8_cache is None:
             print("   [ERROR] Không có dữ liệu để lưu.")
             return
@@ -241,6 +252,7 @@ class NormalizationEvaluator(Normalization):
         print(f"   [SUCCESS] Đã xuất xong thư mục {self._method}!")
 
     def evaluation(self, n_repeats: int = 3, max_epochs: int = 30):
+        """Đánh giá hiệu quả chuẩn hóa bằng SGD Logistic Regression."""
         print(f"\n[EVALUATION] Train SGD Logistic Regression ({self._method})...")
         
         X = self._transformed_data_cache

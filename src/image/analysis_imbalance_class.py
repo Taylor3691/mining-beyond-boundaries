@@ -7,6 +7,9 @@ from visualization import plot_class_distribution
 
 class Imbalance(Visualization):
     def __init__(self):
+        """
+        Khởi tạo lớp phân tích sự mất cân bằng giữa các lớp dữ liệu.
+        """
         self._step_name = "Analysis Class Imbalance"
         self._dataset_info = "Unknown Dataset"
         self._status = "Pending"
@@ -15,7 +18,10 @@ class Imbalance(Visualization):
 
     def visitImageDataset(self, dataset: ImageDataset):
         """
-        Thực hiện logic đếm nhãn và cập nhật trạng thái Success/Failed
+        Thực hiện đếm số lượng mẫu trong từng lớp của tập dữ liệu.
+
+        Input:
+            dataset: Đối tượng ImageDataset muốn phân tích.
         """
         # Cập nhật thông tin tập dữ liệu đang xử lý
         folder = dataset.folder_path if dataset.folder_path else "Empty Path"
@@ -47,6 +53,15 @@ class Imbalance(Visualization):
         return
 
     def run(self, dataset: ImageDataset):
+        """
+        Chạy quy trình phân tích và vẽ biểu đồ phân phối lớp.
+
+        Input:
+            dataset: Đối tượng ImageDataset.
+
+        Output:
+            Từ điển chứa số lượng mẫu của từng lớp.
+        """
         # Chạy logic xử lý
         self.visitImageDataset(dataset)
         
@@ -70,7 +85,6 @@ class Imbalance(Visualization):
         print(f"1. Tên bước xử lý : {self._step_name}")
         print(f"2. Tập dữ liệu    : {self._dataset_info}")
         print(f"3. Trạng thái     : {self._status}")
-        
         print(f"4. Kết quả        : ", end="")
         
         if self._status == "Success":
@@ -85,22 +99,14 @@ class Imbalance(Visualization):
             
         print("-"*50 + "\n")
 
-# Ham main dung de test 
 def main():
-
-    # Khởi tạo ImageDataset
     try:
-        # Truyền chính xác đường dẫn data/small vào đây
         dataset = ImageDataset(path=PATH_FOLDER_IMAGE_TEST) 
-        # dataset.info() # In ra thoong tin bo datasset
     except Exception as e:
         print(f"Lỗi khi khởi tạo Dataset: {e}")
         return
 
-    # Khởi tạo Imbalance Service
     imbalance_service = Imbalance()
-
-    # Thực thi Service trực tiếp qua hàm accept()
     dataset.accept(imbalance_service)
 
 if __name__ == "__main__":

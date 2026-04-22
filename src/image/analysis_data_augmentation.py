@@ -16,7 +16,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 
-# TN1: 8 phep bien doi don le
+# Thí nghiệm 1: Các phép biến đổi đơn lẻ
 SINGLE_TRANSFORMS = [
     ("Horizontal Flip",      lambda img: horizontal_flip(img)),
     ("Rotate",            lambda img: rotate_image(img, angle=15)),
@@ -25,7 +25,7 @@ SINGLE_TRANSFORMS = [
     ("Brightness",     lambda img: adjust_brightness_contrast(img, alpha=1.3, beta=20)),
 ]
 
-# TN3: 2 bien the cho moi phep
+# Thí nghiệm 3: Các biến thể nâng cao cho từng phép biến đổi chính
 DUAL_VARIANTS = {
     "Rotate": [
         ("Lead_Rotate_+20", lambda img: horizontal_flip(add_gaussian_noise(random_crop(adjust_brightness_contrast(rotate_image(img, angle=20), alpha=1.1, beta=10), crop_factor=0.85), mean=0, std=15))),
@@ -50,7 +50,7 @@ DUAL_VARIANTS = {
 
 TRANSFORM_KEYS = list(DUAL_VARIANTS.keys())
 
-# TN2: to hop 3 phep bien doi tuan tu
+# Thí nghiệm 2: Tổ hợp 3 phép biến đổi tuần tự
 COMBO_3_PIPELINES = [
     # 1. HFlip + Rotate + Crop
     ("HFlip-Rotate-Crop",
@@ -114,6 +114,16 @@ COMBO_3_PIPELINES = [
 ]
 
 def _apply_pipeline(image, fn_list):
+    """
+    Áp dụng một chuỗi các hàm biến đổi ảnh lên một ảnh duy nhất.
+
+    Input:
+        image: Ma trận ảnh đầu vào.
+        fn_list: Danh sách các hàm biến đổi (lambda hoặc function).
+
+    Output:
+        Ảnh sau khi xử lý.
+    """
     result = image.copy()
     for fn in fn_list:
         result = fn(result)
@@ -121,6 +131,13 @@ def _apply_pipeline(image, fn_list):
 
 class AugmentationExperiment(Visualization):
     def __init__(self, target_size=(64, 64), num_eval_runs=2):
+        """
+        Khởi tạo lớp thực hiện các thí nghiệm tăng cường dữ liệu.
+
+        Input:
+            target_size: Kích thước ảnh mục tiêu để nạp vào mô hình.
+            num_eval_runs: Số lần lặp lại đánh giá để lấy trung bình.
+        """
         self.step_name     = "Data Augmentation Experiment"
         self.dataset_name  = "Unknown"
         self.status        = "Pending"
@@ -141,6 +158,12 @@ class AugmentationExperiment(Visualization):
         self.test_idx     = None
 
     def run(self, obj: Object):
+        """
+        Thực thi quy trình thí nghiệm tăng cường dữ liệu.
+
+        Input:
+            obj: Đối tượng dữ liệu cần thực thi (ImageDataset).
+        """
         if isinstance(obj, ImageDataset):
             self.visitImageDataset(obj)
         else:
@@ -148,6 +171,12 @@ class AugmentationExperiment(Visualization):
             self.log()
 
     def visitImageDataset(self, obj: ImageDataset):
+        """
+        Thực hiện các bước thí nghiệm cụ thể trên tập dữ liệu ảnh.
+
+        Input:
+            obj: Đối tượng ImageDataset.
+        """
         self.dataset_name = obj.folder_path or "ImageDataset"
         try:
             self._load_data(obj)
@@ -162,6 +191,7 @@ class AugmentationExperiment(Visualization):
             self.log()
 
     def log(self):
+        """In kết quả tổng hợp sau thí nghiệm."""
         print(f"\n{'='*55}")
         print(f"  Buoc xu ly   : {self.step_name}")
         print(f"  Tap du lieu  : {self.dataset_name}")
@@ -181,6 +211,16 @@ class AugmentationExperiment(Visualization):
         print(f"{'='*55}")
     
     def _save_augmented_images(self, tn_group, method_name, aug_imgs, aug_labels, aug_paths):
+        """
+        Lưu các ảnh đã được tăng cường vào thư mục cục bộ để kiểm tra.
+
+        Input:
+            tn_group: Tên nhóm thí nghiệm (tn_1, tn_2, tn_3).
+            method_name: Tên phương pháp tăng cường.
+            aug_imgs: Danh sách ảnh đã biến đổi.
+            aug_labels: Danh sách nhãn tương ứng.
+            aug_paths: Danh sách đường dẫn gốc tương ứng.
+        """
         safe_method_name = method_name.replace("/", "-").replace(" ", "_").replace(":", "")
         base_dir = os.path.join(PATH_FOLDER_RAW, "preprocessing", tn_group, safe_method_name)
         for i, img in enumerate(aug_imgs):
@@ -202,6 +242,12 @@ class AugmentationExperiment(Visualization):
                 pass
 
     def _load_data(self, obj: ImageDataset):
+        """
+        Nạp toàn bộ dữ liệu từ ImageDataset vào bộ nhớ, có hỗ trợ resize.
+
+        Input:
+            obj: Đối tượng ImageDataset.
+        """
         images_temp = []
         labels_temp = []
         paths_temp  = []
@@ -226,6 +272,9 @@ class AugmentationExperiment(Visualization):
         self.tsne_labels = [lbl - 1 for lbl in labels_temp]
 
     def _split_data(self):
+        """
+        Phân chia dữ liệu nạp được thành tập Train và Test (80/20).
+        """
         indices = np.arange(len(self.all_images))
         self.train_idx, self.test_idx = train_test_split(
             indices, test_size=0.2, random_state=42,
@@ -234,6 +283,16 @@ class AugmentationExperiment(Visualization):
         print(f"[INFO] Train: {len(self.train_idx)}, Test: {len(self.test_idx)}")
 
     def evaluation(self, X_train, y_train, X_test, y_test):
+        """
+        Huấn luyện mô hình Logistic Regression và tính toán các chỉ số đánh giá.
+
+        Input:
+            X_train, y_train: Dữ liệu và nhãn tập huấn luyện.
+            X_test, y_test: Dữ liệu và nhãn tập kiểm tra.
+
+        Output:
+            Từ điển chứa Accuracy, Precision, Recall, F1-score và thời gian huấn luyện.
+        """
         acc_list, prec_list, rec_list, f1_list, time_list = [], [], [], [], []
         for i in range(self.num_eval_runs):
             start = time.time()
@@ -265,6 +324,15 @@ class AugmentationExperiment(Visualization):
         }
 
     def _evaluate_pipeline_balance(self, pipeline_fn):
+        """
+        Thực hiện tăng cường dữ liệu để cân bằng các lớp và đánh giá hiệu quả.
+
+        Input:
+            pipeline_fn: Hàm thực hiện chuỗi biến đổi.
+
+        Output:
+            Bao gồm ảnh tổng hợp, nhãn, đường dẫn, dữ liệu cho t-SNE và kết quả metrics.
+        """
         import random
         from collections import Counter
         
@@ -275,7 +343,7 @@ class AugmentationExperiment(Visualization):
         counts = Counter(y_train)
         max_count = max(counts.values()) if counts else 0
         
-        # 1. Cân bằng các class
+        # Cân bằng số mẫu giữa các lớp
         X_bal_add = []
         y_bal_add = []
         path_bal_add = []
@@ -305,7 +373,7 @@ class AugmentationExperiment(Visualization):
         X_train_flat = [img.flatten().astype(np.float32) / 255.0 for img in X_bal_full]
         y_train_final = np.array(y_bal_full)
         
-        # T-SNE sẽ dùng Train_final + Test_final
+        # Chuẩn bị dữ liệu cho t-SNE (Gộp Train đã cân bằng và Test)
         X_test = [self.all_images[i] for i in self.test_idx]
         X_test_flat = [img.flatten().astype(np.float32) / 255.0 for img in X_test]
         y_test = [self.tsne_labels[i] for i in self.test_idx]
@@ -318,6 +386,9 @@ class AugmentationExperiment(Visualization):
         return synth_imgs, synth_labels, synth_paths, tsne_imgs, tsne_labels, metrics
 
     def _evaluate_all(self):
+        """
+        Thực hiện tất cả các thí nghiệm (Baseline, TN1, TN2, TN3).
+        """
         results = []
         
         X_test  = [self.all_images[i] for i in self.test_idx]
@@ -384,6 +455,15 @@ class AugmentationExperiment(Visualization):
         self.eval_results = results
 
     def resize_for_tsne(self, images):
+        """
+        Đảm bảo các ảnh đưa vào t-SNE có cùng kích thước mục tiêu.
+
+        Input:
+            images: Danh sách các ảnh.
+
+        Output:
+            Danh sách ảnh đã được resize.
+        """
         results = []
         for img in images:
             if img.shape[:2] != (self.target_size[1], self.target_size[0]):

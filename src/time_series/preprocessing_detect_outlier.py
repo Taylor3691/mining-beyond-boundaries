@@ -5,6 +5,7 @@ from sklearn.ensemble import IsolationForest
 from statsmodels.tsa.seasonal import STL
 from core.service_base import Preprocessing
 import os
+from dataset import TimeSeriesDataset
 
 class DetectOutlierTimeSeries(Preprocessing):
     def __init__(self,
@@ -22,7 +23,6 @@ class DetectOutlierTimeSeries(Preprocessing):
         self._window_size = window_size
         self._threshold = threshold
         self._contamination = contamination
-        
         self._stats: Dict[str, Any] = {}
         self._anomalies_mask = None 
         self._anomaly_indices: List[int] = [] 
@@ -69,11 +69,6 @@ class DetectOutlierTimeSeries(Preprocessing):
             self._fit_isolation_forest(series_clean)
         elif self._method == 'stl':
             self._fit_stl_thresholding(series_clean)
-            
-        if isinstance(self._anomalies_mask, pd.Series):
-            self._anomalies_mask = self._anomalies_mask.to_numpy()
-
-        # Cập nhật danh sách ứng viên
         self._anomaly_indices = np.where(self._anomalies_mask)[0].tolist()
 
     def transform(self, arr: np.ndarray):
@@ -108,12 +103,21 @@ class DetectOutlierTimeSeries(Preprocessing):
         return
 
     def visitImageDataset(self, obj):
+        """Không hỗ trợ dữ liệu hình ảnh."""
         pass
 
     def log(self):
-        pass
+        """In thông tin tóm tắt kết quả phát hiện dị thường."""
+        print(f"--- DetectOutlierTimeSeries Log ---")
+        print(f"Method: {self._method}")
+        print(f"Total anomalies detected: {len(self._anomaly_indices)}")
+        if self._method == 'z-score':
+            print(f"  - Mean (Deseasonalized): {self._stats.get('mean', 0):.4f}")
+            print(f"  - Std (Deseasonalized): {self._stats.get('std', 0):.4f}")
+        elif self._method == 'stl':
+            print(f"  - IQR Range: [{self._stats.get('lower_bound', 0):.4f}, {self._stats.get('upper_bound', 0):.4f}]")
+        return
 
-    # Implementations cho từng thuật toán
     def _fit_zscore_deseasonalized(self, series: pd.Series):
         stl = STL(series, period=self._window_size, robust=True)
         res = stl.fit()
@@ -158,3 +162,89 @@ class DetectOutlierTimeSeries(Preprocessing):
         self._anomalies_mask = (resid < lower_bound) | (resid > upper_bound)
         self._stats['lower_bound'] = lower_bound
         self._stats['upper_bound'] = upper_bound
+
+
+
+from visualization.comparison import plot_anomalies_single_method, plot_anomalies_all_methods
+
+def main():
+    print("="*50)
+    print(" BẮT ĐẦU PIPELINE PHÁT HIỆN DỊ THƯỜNG COVID-19")
+    print("="*50)
+
+    # 1. Khởi tạo và nạp dữ liệu
+    # Lưu ý: Sửa 'path/to/covid_19_data.csv' thành đường dẫn thực tế của bạn
+    data_path = './data/time-series/time-series-19-covid-combined.csv' 
+    time_col = 'Date' # Cột thời gian thường thấy trong dataset Covid-19 Kaggle
+    target_col = 'Confirmed'     # Cột cần phân tích (Có thể là 'New_cases' nếu bạn đã tính sai phân)
+    
+    # Tạo mock data nếu file không tồn tại để code không bị lỗi khi test nhanh
+    if not os.path.exists(data_path):
+        print(f"[CẢNH BÁO] Không tìm thấy {data_path}. Đang tạo dữ liệu mẫu...")
+        dates = pd.date_range(start='2020-01-01', periods=100, freq='D')
+        import numpy as np
+        # Tạo trend + seasonality + noise + 2 điểm dị thường lớn
+        values = np.linspace(10, 100, 100) + np.sin(np.arange(100)) * 10 + np.random.normal(0, 2, 100)
+        values[30] += 50  # Dị thường 1
+        values[75] -= 40  # Dị thường 2
+        pd.DataFrame({time_col: dates, target_col: values}).to_csv(data_path, index=False)
+
+    try:
+        dataset = TimeSeriesDataset(path=data_path, time_column=time_col)
+        dataset.info()
+        
+        # Set Target (Chọn biến cần phân tích dị thường)
+        dataset.set_target(target_column=target_col)
+        print(f"Đã set target: '{target_col}'\n")
+
+    except Exception as e:
+        print(f"[LỖI] Khởi tạo dataset thất bại: {e}")
+        return
+
+    # 2. Khởi tạo Service Phát hiện dị thường
+    # Sử dụng window_size = 7 để bắt chu kỳ tuần của Covid-19
+    detector = DetectOutlierTimeSeries(window_size=7, threshold=3.0, contamination=0.05)
+    
+    # Dictionary để lưu mask của tất cả các phương pháp phục vụ cho việc so sánh ở cuối
+    all_masks_dict = {}
+        
+    # Danh sách 3 phương pháp cần test
+    methods_to_test = ['z-score', 'iforest', 'stl']
+
+    # 3. Vòng lặp chạy và đánh giá từng phương pháp
+    for method in methods_to_test:
+        print("-" * 40)
+        print(f"[*] Đang thực thi phương pháp: {method.upper()}")
+        
+        # Chuyển đổi phương pháp
+        detector.set_method(method)
+        
+        # Cho dataset accept service (chạy qua pipeline)
+        dataset.accept(detector)
+        
+        # Trích xuất danh sách các index khả nghi
+        anomalies_indices = detector.get_anomaly_candidates()
+        print(f"   -> Đã tìm thấy {len(anomalies_indices)} điểm dị thường.")
+        
+        # Lấy boolean mask
+        mask = detector.get_anomaly_mask()
+        all_masks_dict[method] = mask
+        
+        # Vẽ biểu đồ riêng cho phương pháp này
+        try:
+            print(f"   -> Đang vẽ biểu đồ cho {method.upper()}...")
+            plot_anomalies_single_method(dataset=dataset, anomaly_mask=mask, method_name=method.upper())
+        except Exception as e:
+            print(f"[LỖI] Không thể vẽ biểu đồ cho {method}: {e}")
+
+    # 4. Vẽ biểu đồ so sánh tổng hợp
+        print("-" * 40)
+    print("[*] Đang vẽ biểu đồ so sánh tổng hợp tất cả các phương pháp...")
+    try:
+        plot_anomalies_all_methods(dataset=dataset, anomalies_dict=all_masks_dict)
+        print("[THÀNH CÔNG] Pipeline hoàn tất!")
+    except Exception as e:
+        print(f"[LỖI] Không thể vẽ biểu đồ so sánh: {e}")
+
+if __name__ == "__main__":
+    main()

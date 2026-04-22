@@ -198,7 +198,6 @@ def plot_rolling_statistics(dates, values, feature_name, stat_type="Mean", regio
     plt.tight_layout()
     plt.show()
 
-# Yêu cầu: Hàm vẽ plot time và chấm điểm khả nghi của 1 PHƯƠNG PHÁP
 def plot_anomalies_single_method(dataset, anomaly_mask: np.ndarray, method_name: str = "Unknown Method"):
     """
     Plots a Time Plot with anomalies for a specific method.
@@ -227,7 +226,6 @@ def plot_anomalies_single_method(dataset, anomaly_mask: np.ndarray, method_name:
     plt.tight_layout()
     plt.show()
 
-# Yêu cầu: Hàm vẽ và chấm điểm khả nghi của TẤT CẢ PHƯƠNG PHÁP
 def plot_anomalies_all_methods(dataset, anomalies_dict: Dict[str, np.ndarray]):
     """
     Plots a Time Plot and simultaneously displays anomalies from multiple methods.

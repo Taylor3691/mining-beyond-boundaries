@@ -8,15 +8,16 @@ from IPython.display import display, Markdown
 class ContrastAndBrightness(Visualization):
 
     def __init__(self):
+        """
+        Khởi tạo lớp phân tích độ sáng và độ tương phản của tập dữ liệu ảnh.
+        """
         self._dataset : ImageDataset | None = None
         self._df      : pd.DataFrame | None = None
         self._stats   : pd.DataFrame | None = None  # mean/var/median/IQR per class
         self._status  : str = "Not Run"
 
-    # ------------------------------------------------------------------ #
-    # Pipeline interface                                                   #
-    # ------------------------------------------------------------------ #
     def run(self):
+        """Thực thi quy trình phân tích và hiển thị kết quả."""
         if self._dataset is None:
             self._status = "Failed"
             return
@@ -25,6 +26,7 @@ class ContrastAndBrightness(Visualization):
         self._analyze()
 
     def log(self):
+        """In log kết quả phân tích ra màn hình."""
         print("=" * 55)
         print("Step    : Analysis Contrast & Brightness")
         print(f"Dataset : {self._dataset._folder_path if self._dataset else 'None'}")
@@ -39,18 +41,18 @@ class ContrastAndBrightness(Visualization):
             print(self._stats.to_string())
         print("=" * 55)
 
-    # ------------------------------------------------------------------ #
-    # Service interface                                                    #
-    # ------------------------------------------------------------------ #
     def visitImageDataset(self, obj: ImageDataset):
+        """
+        Duyệt qua ImageDataset, tính toán độ sáng và độ tương phản cho từng ảnh theo batch.
+
+        Input:
+            obj: Đối tượng ImageDataset cần phân tích.
+        """
         try:
             # Map index sang tên class để hiển thị
             idx_to_class = {v: k for k, v in obj.class_idx.items()}
             records = []
 
-            # GỌI HÀM LOAD THEO BATCH
-            # batch_images: list các ma trận ảnh
-            # batch_indices: list các vị trí tương ứng trong obj._labels
             for batch_images, batch_indices in obj.load():
                 
                 for img, idx in zip(batch_images, batch_indices):
@@ -58,7 +60,7 @@ class ContrastAndBrightness(Visualization):
                     label_val = obj._labels[idx]
                     class_name = idx_to_class.get(int(label_val), str(label_val))
 
-                    # Tính toán Gray scale bằng Vectorization (Nhanh hơn)
+                    # Chuyển sang grayscale bằng Vectorization
                     gray = np.dot(img[..., :3], [0.299, 0.587, 0.114]).astype(np.float32)
                     
                     records.append({
@@ -83,11 +85,16 @@ class ContrastAndBrightness(Visualization):
         except Exception as e:
             self._status = f"Failed — {str(e)}"
 
-    # ------------------------------------------------------------------ #
-    # Internal helpers                                                     #
-    # ------------------------------------------------------------------ #
     def _compute_stats(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Tính mean, var, median, IQR, n_outliers cho brightness & contrast theo class."""
+        """
+        Tính toán các chỉ số thống kê (mean, var, median, IQR, outliers) cho độ sáng và độ tương phản.
+
+        Input:
+            df: DataFrame chứa kết quả tính toán thô của từng ảnh.
+
+        Output:
+            DataFrame chứa các chỉ số thống kê tổng hợp theo từng lớp.
+        """
         rows = []
         for class_name, grp in df.groupby("class_name"):
             row = {"class_name": class_name}
@@ -105,7 +112,7 @@ class ContrastAndBrightness(Visualization):
         return pd.DataFrame(rows).set_index("class_name")
 
     def _analyze(self):
-        """Generate nhận xét tự động và render Markdown trong notebook."""
+        """Hiển thị nhận xét kết quả dưới dạng Markdown."""
         s = self._stats
 
         # ── Brightness ──────────────────────────────────────────────────

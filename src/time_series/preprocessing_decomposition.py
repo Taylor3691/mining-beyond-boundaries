@@ -4,11 +4,18 @@ from statsmodels.tsa.seasonal import seasonal_decompose, STL
 import matplotlib.pyplot as plt
 
 class DecompositionAnalysis:
+    """Lớp cơ sở thực hiện phân rã chuỗi thời gian (Time Series Decomposition)."""
+
     def __init__(self, data_series: pd.Series, period: int):
+        """
+        Khởi tạo bộ phân rã.
+
+        Input:
+            data_series: Chuỗi dữ liệu số cần phân rã.
+            period: Chu kỳ mùa vụ (seasonal period).
+        """
         self._series = data_series.dropna()
         self._period = period
-        
-        # Lưu trữ các thành phần sau khi phân rã
         self.trend = None
         self.seasonal = None
         self.resid = None
@@ -54,8 +61,9 @@ class DecompositionAnalysis:
         plt.tight_layout()
         plt.show()
 
-
 class AdditiveDecomposition(DecompositionAnalysis):
+    """Phân rã chuỗi thời gian theo mô hình cộng (Additive Model)."""
+
     def __init__(self, data_series: pd.Series, period: int):
         super().__init__(data_series, period)
         self._model_type = 'additive'
@@ -94,7 +102,6 @@ class MultiplicativeDecomposition(DecompositionAnalysis):
     def residual(self):
         return (self.observed + 1.0) / (self.trend * self.seasonal)
 
-    # GHI ĐÈ HÀM NÀY ĐỂ ĐO LƯỜNG CÔNG BẰNG VỚI ADDITIVE
     def residual_variance_ratio(self) -> float:
         if self.trend is None or self.seasonal is None: 
             return 0.0
@@ -113,6 +120,8 @@ class MultiplicativeDecomposition(DecompositionAnalysis):
 
 
 class STLDecomposition(DecompositionAnalysis):
+    """Phân rã chuỗi thời gian mạnh mẽ bằng phương pháp STL."""
+
     def __init__(self, data_series: pd.Series, period: int):
         super().__init__(data_series, period)
         self._model_type = 'additive' # STL bản chất là Additive

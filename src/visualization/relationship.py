@@ -17,7 +17,6 @@ def visualize_brightness_contrast_boxplot(df: pd.DataFrame) -> None:
     fig, axes = plt.subplots(1, 2, figsize=(16, 6))
     fig.suptitle("Phân tích Độ sáng & Độ tương phản theo Lớp", fontsize=14, fontweight="bold")
 
-    # --- Boxplot Brightness ---
     sns.boxplot(
         data=df, x="class_name", y="brightness",
         palette="Set2", ax=axes[0]
@@ -41,9 +40,6 @@ def visualize_brightness_contrast_boxplot(df: pd.DataFrame) -> None:
     plt.savefig("brightness_contrast_boxplot.png", dpi=150, bbox_inches="tight")
     plt.show()
 
-#  Task 22: Vẽ đường cong SSIM, đầu vào nhận vào mảng các giá trị SSIM
-# trung bình sau khi đã resize, sau đó vẽ line chart (Hoặc một đồ thị đường)
-# cong gì đó theo ý thầy, check thử xem đồ thị đó có phải line chart rồi hãng vẽ
 def plot_ssim_curve(sizes: list, ssim_scores: list, save_path: str = "ssim_vs_size_curve.png"):
     """
     Vẽ đồ thị đường (Line Chart) thể hiện mối liên hệ giữa kích thước và chỉ số SSIM 
@@ -91,10 +87,6 @@ def plot_ssim_curve(sizes: list, ssim_scores: list, save_path: str = "ssim_vs_si
     # Lưu biểu đồ
     plt.savefig(save_path, dpi=300)
     print(f"\n[Visualizer] SSIM relationship curve successfully saved at: {save_path}")
-
-# =================================================================================
-# TASK 1.1: BỔ SUNG CODE VẼ HEATMAP (PEARSON VÀ SPEARMAN) CHO DỮ LIỆU BẢNG
-# =================================================================================
 
 def plot_pearson_heatmap(df: pd.DataFrame, title="Pearson Correlation Heatmap"):
     plt.figure(figsize=(14, 12))
@@ -187,7 +179,7 @@ def plot_dim_reduction_2d(X, labels, class_names=None, method='tsne',
         'Label': label_names
     })
 
-    # --- Vẽ Scatter Plot (giữ nguyên thiết kế gốc) ---
+    # --- Vẽ Scatter Plot ---
     fig, ax = plt.subplots(figsize=(10, 8))
     sns.scatterplot(
         x='Dim-1', y='Dim-2',
@@ -261,7 +253,6 @@ def plot_granger_causality_directed_graph(
         return
 
     # --- Layout vòng tròn để dễ quan sát quan hệ hai chiều ---
-    # Node lớn hơn để chữ trong node rõ ràng hơn.
     max_label_len = max(len(str(node)) for node in nodes)
     node_radius = float(np.clip(0.045 * max_label_len + 0.22, 0.55, 0.95))
     radius = max(3.2, 2.2 + 0.9 * n_nodes)

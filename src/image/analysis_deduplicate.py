@@ -2,7 +2,6 @@ import sys
 import os
 import gc
 
-# Đảm bảo Python nhận diện được thư mục gốc để import visualization và core
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 import cv2
@@ -20,6 +19,13 @@ class ImageDeduplication(Visualization):
     """
 
     def __init__(self, hash_size=8, similarity_threshold=10):
+        """
+        Khởi tạo lớp phân tích và tìm kiếm ảnh trùng lặp.
+
+        Input:
+            hash_size: Kích thước của mã băm (mặc định 8x8).
+            similarity_threshold: Ngưỡng khoảng cách Hamming để coi là trùng lặp (mặc định 10).
+        """
         self._hash_size = hash_size
         self._threshold = similarity_threshold
         self._indices_to_remove = []
@@ -29,6 +35,15 @@ class ImageDeduplication(Visualization):
         self._dataset_path = "N/A"
 
     def _calculate_phash(self, image: np.ndarray) -> str:
+        """
+        Tính toán mã băm pHash (Perceptual Hash) cho một ảnh.
+
+        Input:
+            image: Ma trận ảnh đầu vào (Numpy array).
+
+        Output:
+            Chuỗi ký tự '0' và '1' đại diện cho mã băm.
+        """
         # Step 1: Resize to 32x32
         resized = cv2.resize(image, (32, 32), interpolation=cv2.INTER_AREA)
         # Step 2: Convert to grayscale
@@ -45,10 +60,24 @@ class ImageDeduplication(Visualization):
         return hash_str
 
     def _hamming_distance(self, hash1: str, hash2: str) -> int:
+        """
+        Tính khoảng cách Hamming giữa hai mã băm.
+
+        Input:
+            hash1, hash2: Hai chuỗi mã băm cần so sánh.
+
+        Output:
+            Số lượng vị trí khác biệt giữa hai mã băm.
+        """
         return sum(c1 != c2 for c1, c2 in zip(hash1, hash2))
 
     def _find_duplicates(self, images_data: list):
-        """Hàm cũ dùng cho mảng in-memory (Dễ tràn RAM)"""
+        """
+        Tìm kiếm các ảnh trùng lặp trong một danh sách ảnh cho trước (Xử lý in-memory).
+
+        Input:
+            images_data: Danh sách các mảng numpy chứa dữ liệu ảnh.
+        """
         num_images = len(images_data)
         if num_images < 2: return
         image_hashes = [self._calculate_phash(img) for img in images_data]
@@ -67,8 +96,13 @@ class ImageDeduplication(Visualization):
 
     def run_batch(self, dataset: ImageDataset):
         """
-        [NEW] Quét và tìm ảnh trùng lặp sử dụng Generator (Bảo vệ RAM).
-        Được gọi trực tiếp từ Notebook.
+        Quét và tìm ảnh trùng lặp theo batch để tiết kiệm bộ nhớ.
+
+        Input:
+            dataset: Đối tượng ImageDataset.
+
+        Output:
+            Danh sách index các ảnh bị coi là trùng lặp cần xóa.
         """
         valid_hashes = []
         total_paths = len(dataset.image_paths)
@@ -110,6 +144,15 @@ class ImageDeduplication(Visualization):
         return self._indices_to_remove
 
     def visitImageDataset(self, obj: ImageDataset):
+        """
+        Xử lý tìm ảnh trùng lặp cụ thể trên đối tượng ImageDataset.
+
+        Input:
+            obj: Đối tượng ImageDataset.
+
+        Output:
+            Danh sách các index trùng lặp.
+        """
         try:
             self._initial_count = obj._size
             self._dataset_path = obj._folder_path
@@ -125,6 +168,9 @@ class ImageDeduplication(Visualization):
         return self._indices_to_remove
     
     def log(self):
+        """
+        In log chi tiết về quá trình tìm kiếm ảnh trùng lặp.
+        """
         print("\n--- Image Deduplication Analysis Log ---")
         print(f"1. Processing Step: Image Deduplication Analysis")
         print(f"2. Dataset Path: {self._dataset_path}")
@@ -138,6 +184,12 @@ class ImageDeduplication(Visualization):
         print("----------------------------------------\n")
 
     def run(self, obj: ImageDataset):
+        """
+        Thực thi quy trình phân tích trùng lặp.
+
+        Input:
+            obj: Đối tượng ImageDataset.
+        """
         if isinstance(obj, ImageDataset):
             self.visitImageDataset(obj)
         return
