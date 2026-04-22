@@ -5,6 +5,8 @@
 - Table
 - Time series
 
+Báo cáo thực nghiệm và tiến độ đồ án tại [PDF](./docs/report.pdf)
+
 README này hướng dẫn bạn chạy dự án từ đầu đến cuối:
 1. Cài môi trường
 2. Tải dataset từ Kaggle
