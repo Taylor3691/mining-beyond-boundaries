@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import scipy.stats as stats
 from IPython.display import display, Markdown
-from core.testing import DistributionTesting
+from core.test_base import DistributionTesting
 from table.dataset import TableDataset 
 
 class MCARLittleTesting(DistributionTesting):
