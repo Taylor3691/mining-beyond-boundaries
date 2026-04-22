@@ -195,7 +195,17 @@ def plot_column_distribution(data_series: np.ndarray, column_name: str, test_nam
     plt.show()
 
 def plot_ks_test_results(orig_data, norm_data, method_name, d_stat, p_value):
-    """Vẽ 3 biểu đồ ECDF: Gốc, Chuẩn hóa và Overlay (Z-score scaled)."""
+    """
+    Vẽ biểu đồ so sánh kết quả kiểm định Kolmogorov-Smirnov (K-S Test).
+    Hiển thị 3 biểu đồ đường ECDF: Ảnh gốc, Ảnh chuẩn hóa và Overlay (đã chuẩn hóa z-score).
+    
+    Args:
+        orig_data (np.ndarray): Dữ liệu pixel ảnh gốc.
+        norm_data (np.ndarray): Dữ liệu pixel ảnh sau chuẩn hóa.
+        method_name (str): Tên phương pháp chuẩn hóa.
+        d_stat (float): Trị số thống kê D của K-S test.
+        p_value (float): Trị số p-value của K-S test.
+    """
     fig, axes = plt.subplots(1, 3, figsize=(21, 6))
     colors, labs = ["#2980b9", "#c0392b"], ["Original", f"Normalized ({method_name})"]
     
@@ -225,6 +235,14 @@ def plot_ks_test_results(orig_data, norm_data, method_name, d_stat, p_value):
     plt.tight_layout(); plt.show()
  
 def plot_ks_comparison_summary(ks_results: list, alpha: float = 0.05):
+    """
+    Vẽ biểu đồ cột so sánh tổng hợp các trị số D và p-value của nhiều phương pháp chuẩn hóa.
+    Làm nổi bật các phương pháp bác bỏ hoặc chấp nhận giả thuyết H0 dựa trên ngưỡng alpha.
+    
+    Args:
+        ks_results (list): Danh sách các dict chứa kết quả K-S test (Method, D, p-value).
+        alpha (float): Ngưỡng ý nghĩa thống kê (mặc định 0.05).
+    """
     methods  = [r["Method"] for r in ks_results]
     d_stats  = [float(r["K-S Stat (D)"]) for r in ks_results]
     p_values = [max(float(r["p-value"]), 1e-300) for r in ks_results]

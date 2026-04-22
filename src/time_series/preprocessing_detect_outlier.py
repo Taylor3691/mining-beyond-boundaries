@@ -12,7 +12,7 @@ class DetectOutlierTimeSeries(Preprocessing):
                  method: str = 'z-score',
                  window_size: int = 7,  # Chu kỳ 7 ngày cho Covid-19
                  threshold: float = 3.0, # Ngưỡng Z-score
-                 contamination: float = 0.05 # Tỷ lệ dị thường cho Isolation Forest
+                 contamination: Any = 0.05 # Cho phép float hoặc 'auto'
                  ):
         
         self._supported_methods = ['z-score', 'iforest', 'stl']
@@ -24,10 +24,11 @@ class DetectOutlierTimeSeries(Preprocessing):
         self._threshold = threshold
         self._contamination = contamination
         self._stats: Dict[str, Any] = {}
-        self._anomalies_mask = None # Lưu mảng boolean [True, False, ...]
-        self._anomaly_indices: List[int] = [] # Lưu danh sách các index là dị thường
+        self._anomalies_mask = None 
+        self._anomaly_indices: List[int] = [] 
         return
-
+    
+    # Getters & Setters
     @property
     def method(self):
         return self._method
@@ -39,20 +40,29 @@ class DetectOutlierTimeSeries(Preprocessing):
         self._stats.clear()
         self._anomalies_mask = None
         self._anomaly_indices = []
-        print(f"Đã chuyển phương pháp phát hiện dị thường sang: {self._method}")
+        print(f"[*] Đã chuyển phương pháp phát hiện dị thường sang: {self._method.upper()}")
 
     def get_anomaly_candidates(self) -> List[int]:
-        if self._anomaly_indices is None or len(self._anomaly_indices) == 0:
-            print("Chưa có điểm dị thường nào được phát hiện. Vui lòng gọi fit() hoặc run() trước.")
+        if not self._anomaly_indices:
+            print("[WARNING] Chưa có điểm dị thường nào. Hãy đảm bảo đã chạy fit() hoặc run().")
         return self._anomaly_indices
 
     def get_anomaly_mask(self) -> np.ndarray:
         return self._anomalies_mask
 
-    def fit(self, series: pd.Series):
+    # Core Logic
+    def fit(self, series: Any):
         """Tính toán và tìm các điểm khả nghi dựa trên phương pháp đã chọn"""
+        
+        if not isinstance(series, pd.Series):
+            series = pd.Series(series)
+
+        self._anomalies_mask = np.zeros(len(series), dtype=bool)
+
+        # Xử lý missing values
         series_clean = series.bfill().ffill()
 
+        # Route theo phương pháp
         if self._method == 'z-score':
             self._fit_zscore_deseasonalized(series_clean)
         elif self._method == 'iforest':
@@ -62,33 +72,12 @@ class DetectOutlierTimeSeries(Preprocessing):
         self._anomaly_indices = np.where(self._anomalies_mask)[0].tolist()
 
     def transform(self, arr: np.ndarray):
-        # Với bài toán Anomaly Detection, transform có thể trả về mảng đã được fill (thay thế dị thường)
-        # Trong giới hạn yêu cầu, ta chỉ tập trung detect, nên transform trả về mask dị thường
         pass
 
     def fit_transform(self, arr: np.ndarray):
         pass
 
-    """
     def run(self, obj):
-        Chạy thông qua Pipeline (nhận TimeSeriesDataset)S
-        # Tránh import vòng, kiểm tra thuộc tính target
-        if not hasattr(obj, 'target') or obj.target is None:
-            raise ValueError("Dataset chưa được set_target().")
-        
-        try:
-            target_series = obj.target
-            self.fit(target_series)
-            obj._anomaly_mask = self._anomalies_mask # Gắn mask vào dataset nếu cần
-        except Exception as e:
-            print(f"Error during outlier detection: {e}")
-        finally:
-            self.log()
-        return
-    """
-    def run(self, obj):
-        """Định tuyến (Route) đúng loại dataset vào đúng hàm visit"""
-        # Nếu đang dùng base TimeSeriesDataset
         if obj.__class__.__name__ == "TimeSeriesDataset":
             self.visitTimeSeriesDataset(obj)
         else:
@@ -96,16 +85,19 @@ class DetectOutlierTimeSeries(Preprocessing):
         return
 
     def visitTimeSeriesDataset(self, obj):
-        """Hàm xử lý chính cho TimeSeries Dataset"""
         if getattr(obj, 'target', None) is None:
             raise ValueError("Dataset chưa được gọi hàm set_target().")
         
         try:
             target_series = obj.target
             self.fit(target_series)
-            obj._anomaly_mask = self._anomalies_mask # Gắn mask ngược lại dataset (nếu cần)
+            
+            obj._anomaly_mask = self._anomalies_mask 
+            
         except Exception as e:
-            print(f"Error during outlier detection: {e}")
+            import traceback
+            print(f"\n[ERROR] Thuật toán {self._method.upper()} gặp sự cố:")
+            traceback.print_exc()
         finally:
             self.log()
         return
@@ -127,14 +119,11 @@ class DetectOutlierTimeSeries(Preprocessing):
         return
 
     def _fit_zscore_deseasonalized(self, series: pd.Series):
-        # 1. Phân rã để lấy seasonality
         stl = STL(series, period=self._window_size, robust=True)
         res = stl.fit()
         
-        # 2. Khử tính mùa vụ
         deseasonalized = series - res.seasonal
         
-        # 3. Tính Z-score trên phần đã khử
         mean_val = deseasonalized.mean()
         std_val = deseasonalized.std()
         
@@ -145,28 +134,24 @@ class DetectOutlierTimeSeries(Preprocessing):
         self._stats['std'] = std_val
 
     def _fit_isolation_forest(self, series: pd.Series):
-        # Trích xuất đặc trưng trên cửa sổ trượt (Sliding Window)
         df_roll = pd.DataFrame({'y': series})
         for i in range(1, self._window_size):
             df_roll[f'y_lag_{i}'] = df_roll['y'].shift(i)
         
-        df_roll = df_roll.fillna(method='bfill')
+        df_roll = df_roll.bfill().ffill()
         X = df_roll.values
 
-        # Khởi tạo và fit iForest
+        # Khởi tạo model
         model = IsolationForest(contamination=self._contamination, random_state=42)
         preds = model.fit_predict(X)
         
-        # Isolation Forest trả về -1 cho dị thường, 1 cho bình thường
         self._anomalies_mask = (preds == -1)
 
     def _fit_stl_thresholding(self, series: pd.Series):
-        # 1. Phân rã STL
         stl = STL(series, period=self._window_size, robust=True)
         res = stl.fit()
         resid = res.resid
         
-        # 2. Xác định ngưỡng Thresholding trên phần Residual dựa vào IQR
         q1 = np.nanpercentile(resid, 25)
         q3 = np.nanpercentile(resid, 75)
         iqr = q3 - q1
