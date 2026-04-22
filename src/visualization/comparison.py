@@ -263,3 +263,33 @@ def plot_anomalies_all_methods(dataset, anomalies_dict: Dict[str, np.ndarray]):
     plt.grid(True, linestyle='--', alpha=0.6)
     plt.tight_layout()
     plt.show()
+
+def plot_edge_density_boxplot(df_edge: pd.DataFrame, save_path: str = "edge_density_boxplot.png"):
+    """
+    Vẽ biểu đồ Boxplot so sánh phân phối Edge Density giữa các lớp (Class) theo từng phương pháp phát hiện cạnh.
+    """
+    methods = df_edge['Method'].unique()
+    n_methods = len(methods)
+    
+    fig, axes = plt.subplots(n_methods, 1, figsize=(14, 5 * n_methods))
+    if n_methods == 1:
+        axes = [axes]
+        
+    for i, method in enumerate(methods):
+        subset = df_edge[df_edge['Method'] == method]
+        
+        # Bổ sung hue='Class' và legend=False để fix dứt điểm cảnh báo FutureWarning
+        sns.boxplot(data=subset, x='Class', y='Edge_Density', hue='Class', ax=axes[i], palette='Set3', showfliers=False, legend=False)
+        
+        # Vẽ các điểm đen lấm tấm lên trên
+        sns.stripplot(data=subset, x='Class', y='Edge_Density', hue='Class', ax=axes[i], palette='dark:black', alpha=0.3, jitter=True, legend=False)
+        
+        axes[i].set_title(f"Phân phối Mật độ Cạnh (Edge Density) - {method}", fontsize=14, fontweight='bold')
+        axes[i].set_ylabel("Edge Density (Tỷ lệ pixel cạnh)", fontsize=12)
+        axes[i].set_xlabel("Nhãn (Class)", fontsize=12)
+        axes[i].grid(True, linestyle='--', alpha=0.5)
+        
+    plt.tight_layout()
+    plt.savefig(save_path, dpi=300)
+    plt.show()
+    plt.close()
