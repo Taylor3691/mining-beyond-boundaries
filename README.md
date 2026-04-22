@@ -1,33 +1,116 @@
-﻿# Data Mining Preprocessing Project
+# Data Mining Preprocessing Project
 
-Đồ án tiền xử lý dữ liệu cho môn Data Mining 2026, gồm 3 nhóm dữ liệu:
-- Image
-- Table
-- Time series
+Đồ án tiền xử lý dữ liệu cho môn **Data Mining 2026**, thực hiện khảo sát và cài đặt các kỹ thuật tiền xử lý trên 3 nhóm dữ liệu: **Image**, **Table** và **Time Series**. Đồ án bao gồm phân tích dữ liệu thô, xử lý giá trị thiếu, phát hiện & xử lý outlier, chuẩn hóa, mã hóa đặc trưng, xử lý mất cân bằng lớp, giảm chiều dữ liệu và nhiều kỹ thuật tiền xử lý khác.
 
-Báo cáo thực nghiệm và tiến độ đồ án tại [PDF](./docs/report.pdf)
-
-## Mục lục
-
-1. [Yêu cầu](#1-yêu-cầu)
-2. [Clone và cài môi trường](#2-clone-và-cài-môi-trường)
-   - [2.1. Clone repo](#21-clone-repo)
-   - [2.2. Tạo virtual environment](#22-tạo-virtual-environment)
-   - [2.3. Cài dependencies](#23-cài-dependencies)
-3. [Tải dataset từ Kaggle](#3-tải-dataset-từ-kaggle)
-   - [3.1. Download trực tiếp trên web](#31-cách-1-download-trực-tiếp-trên-web)
-   - [3.2. Dùng Kaggle CLI](#32-cách-2-dùng-kaggle-cli)
-4. [Cấu trúc dữ liệu bắt buộc](#4-cấu-trúc-dữ-liệu-bắt-buộc)
-5. [Kiểm tra nhanh dữ liệu](#5-kiểm-tra-nhanh-dữ-liệu-đã-đặt-đúng-chưa)
-6. [Cách chạy đồ án](#6-cách-chạy-đồ-án)
-   - [6.1. Chạy bằng Notebook](#61-cách-khuyến-nghị-chạy-bằng-notebook)
-   - [6.2. Chạy module Python trực tiếp](#62-chạy-một-số-module-python-trực-tiếp)
-7. [Cách sử dụng](#7-cách-sử-dụng)
-8. [Lỗi thường gặp và cách xử lý](#8-lỗi-thường-gặp-và-cách-xử-lý)
+Báo cáo thực nghiệm và mô tả chi tiết đồ án tại [PDF](./docs/report.pdf)
 
 ---
 
-## 1. Yêu cầu
+## Mục lục
+
+1. [Thông tin nhóm](#1-thông-tin-nhóm)
+2. [Mô tả tập dữ liệu](#2-mô-tả-tập-dữ-liệu)
+3. [Chức năng](#3-chức-năng)
+   - [Phần 1 — Tiền xử lý ảnh](#phần-1--tiền-xử-lý-ảnh)
+   - [Phần 2 — Tiền xử lý dữ liệu bảng](#phần-2--tiền-xử-lý-dữ-liệu-bảng)
+   - [Phần 3 — Tiền xử lý chuỗi thời gian](#phần-3--tiền-xử-lý-chuỗi-thời-gian)
+4. [Yêu cầu](#4-yêu-cầu)
+5. [Clone và cài môi trường](#5-clone-và-cài-môi-trường)
+   - [5.1. Clone repo](#51-clone-repo)
+   - [5.2. Tạo virtual environment](#52-tạo-virtual-environment)
+   - [5.3. Cài dependencies](#53-cài-dependencies)
+6. [Tải dataset từ Kaggle](#6-tải-dataset-từ-kaggle)
+   - [6.1. Download trực tiếp trên web](#61-cách-1-download-trực-tiếp-trên-web)
+   - [6.2. Dùng Kaggle CLI](#62-cách-2-dùng-kaggle-cli)
+7. [Cấu trúc dữ liệu bắt buộc](#7-cấu-trúc-dữ-liệu-bắt-buộc)
+8. [Kiểm tra nhanh dữ liệu](#8-kiểm-tra-nhanh-dữ-liệu-đã-đặt-đúng-chưa)
+9. [Cách chạy đồ án](#9-cách-chạy-đồ-án)
+   - [9.1. Chạy bằng Notebook](#91-cách-khuyến-nghị-chạy-bằng-notebook)
+   - [9.2. Chạy module Python trực tiếp](#92-chạy-một-số-module-python-trực-tiếp)
+10. [Cách sử dụng](#10-cách-sử-dụng)
+11. [Lỗi thường gặp và cách xử lý](#11-lỗi-thường-gặp-và-cách-xử-lý)
+
+---
+
+## 1. Thông tin nhóm
+
+| STT | MSSV | Họ và tên |
+|:---:|:--------:|-------------------|
+| 1 | 23120146 | Hoàng Ngọc |
+| 2 | 23122025 | Phạm Ngọc Duy |
+| 3 | 23122032 | Nguyễn Việt Hùng |
+| 4 | 23120266 | Võ Trần Duy Hoàng |
+| 5 | 23122021 | Bùi Duy Bảo |
+
+---
+
+## 2. Mô tả tập dữ liệu
+
+### Dữ liệu Image — Animals-10
+
+| Thuộc tính | Chi tiết |
+|---|---|
+| **Nguồn** | [Kaggle — Animals-10](https://www.kaggle.com/datasets/alessiocorrado99/animals10) |
+| **Số lượng ảnh** | ~26.000 ảnh |
+| **Số lớp** | 10 (`dog`, `cat`, `horse`, `spider`, `butterfly`, `chicken`, `sheep`, `cow`, `squirrel`, `elephant`) |
+| **Định dạng** | JPEG / PNG, kích thước không đồng nhất |
+| **Mô tả** | Tập ảnh động vật thu thập từ Google Images, được phân thành 10 thư mục theo loài. Tên thư mục gốc bằng tiếng Ý, cần đổi sang tiếng Anh trước khi sử dụng. |
+| **Ứng dụng trong đồ án** | Phân tích mất cân bằng lớp, resize & chuẩn hóa ảnh, augmentation, giảm chiều (PCA, t-SNE), kiểm định Kolmogorov-Smirnov |
+
+### Dữ liệu Table — Building Permit Applications
+
+| Thuộc tính | Chi tiết |
+|---|---|
+| **Nguồn** | [Kaggle — Building Permit Applications Data](https://www.kaggle.com/datasets/aparnashastry/building-permit-applications-data) |
+| **Số bản ghi** | ~198.000 dòng |
+| **Số cột** | 43 cột |
+| **Định dạng** | CSV (`Building_Permits.csv`) |
+| **Mô tả** | Dữ liệu đơn xin cấp phép xây dựng tại San Francisco từ 01/01/2013 trở đi, bao gồm thông tin về loại công trình, địa chỉ, chi phí ước tính, ngày nộp/cấp phép, trạng thái, v.v. Dữ liệu chứa nhiều giá trị thiếu và outlier, phù hợp cho bài toán tiền xử lý. |
+| **Ứng dụng trong đồ án** | Phân tích & xử lý missing values, phát hiện & xử lý outlier, mã hóa đặc trưng (Label, One-Hot, Target, Frequency Encoding), chuẩn hóa (Min-Max, Z-score), xử lý mất cân bằng (SMOTE, ADASYN, Under-sampling), giảm chiều (PCA, t-SNE) |
+
+### Dữ liệu Time Series — COVID-19 Time Series
+
+| Thuộc tính | Chi tiết |
+|---|---|
+| **Nguồn** | [Kaggle — COVID-19 Time Series Data](https://www.kaggle.com/datasets/niketchauhan/covid-19-time-series-data) |
+| **Phạm vi** | Dữ liệu chuỗi thời gian COVID-19 toàn cầu (confirmed, deaths, recovered) |
+| **Định dạng** | CSV (`time-series-19-covid-combined.csv`) |
+| **Mô tả** | Dữ liệu chuỗi thời gian tổng hợp về số ca xác nhận, tử vong và hồi phục do COVID-19 theo quốc gia/vùng lãnh thổ và theo ngày. |
+| **Ứng dụng trong đồ án** | Kiểm định tính dừng (ADF, KPSS), phân tích xu hướng & mùa vụ (seasonal decomposition), xử lý missing values chuỗi thời gian, làm mượt (smoothing), chuẩn hóa chuỗi thời gian |
+
+---
+
+## 3. Chức năng
+
+Đồ án thực hiện 3 phần tương ứng với 3 loại dữ liệu (Phần 1 — Ảnh, Phần 2 — Bảng, Phần 3 — Chuỗi thời gian). Bảng dưới đây tóm tắt các tác vụ đã thực hiện cho từng phần. Ngoài ra còn nhiều kỹ thuật khác được trình bày chi tiết trong báo cáo.
+
+### Phần 1 — Tiền xử lý ảnh 
+
+| Tác vụ | Nội dung chi tiết |
+|---|---|
+| **Phân tích thống kê tập dữ liệu** | Perceptual Hashing (pHash), phân tích mất cân bằng lớp (class imbalance), kiểm định Kolmogorov-Smirnov (KS test) |
+| **Cài đặt kỹ thuật tiền xử lý & đo lường** | Resize, chuẩn hóa ảnh, augmentation; đánh giá chất lượng bằng SSIM và PSNR |
+| **Giảm chiều & đánh giá** | Ablation study, phân tích không gian đặc trưng bằng PCA và t-SNE |
+
+### Phần 2 — Tiền xử lý dữ liệu bảng 
+
+| Tác vụ | Nội dung chi tiết |
+|---|---|
+| **EDA thống kê** | Kiểm định phân phối, kiểm định MCAR test cho dữ liệu thiếu |
+| **Phát hiện ngoại lai & mã hóa đặc trưng** | Phát hiện outlier (IQR, Z-score), mã hóa đặc trưng đầu vào (Label, One-Hot, Target, Frequency Encoding) |
+| **Lựa chọn đặc trưng & đánh giá** | Feature selection, đánh giá mô hình bằng Cross-Validation F1-score |
+
+### Phần 3 — Tiền xử lý chuỗi thời gian
+
+| Tác vụ | Nội dung chi tiết |
+|---|---|
+| **Kiểm định tính dừng & phân rã** | Kiểm định ADF, KPSS; phân rã STL (Seasonal-Trend decomposition using LOESS) |
+| **Phát hiện dị thường & xây dựng đặc trưng** | Phát hiện anomaly trong chuỗi thời gian, xây dựng ma trận đặc trưng (feature matrix) |
+| **Dự báo & kiểm định nhân quả** | Dự báo bằng Random Forest Regressor, kiểm định nhân quả Granger (Granger causality) |
+
+---
+
+## 4. Yêu cầu
 
 - Python 3.10+ (khuyến nghị 3.11)
 - Git
@@ -35,16 +118,16 @@ Báo cáo thực nghiệm và tiến độ đồ án tại [PDF](./docs/report.p
 
 ---
 
-## 2. Clone và cài môi trường
+## 5. Clone và cài môi trường
 
-### 2.1. Clone repo
+### 5.1. Clone repo
 
 ```bash
 git clone https://github.com/Taylor3691/data-mining-preprocessing-project.git
 cd data-mining-preprocessing-project
 ```
 
-### 2.2. Tạo virtual environment
+### 5.2. Tạo virtual environment
 
 Windows (PowerShell):
 
@@ -60,7 +143,7 @@ python3 -m venv .venv
 source .venv/bin/activate
 ```
 
-### 2.3. Cài dependencies
+### 5.3. Cài dependencies
 
 ```bash
 python -m pip install --upgrade pip
@@ -69,7 +152,7 @@ pip install -e .
 ```
 ---
 
-## 3. Tải dataset từ Kaggle
+## 6. Tải dataset từ Kaggle
 
 Project dùng 3 nguồn dataset:
 
@@ -77,13 +160,13 @@ Project dùng 3 nguồn dataset:
 2. Table: https://www.kaggle.com/datasets/aparnashastry/building-permit-applications-data
 3. Time series: https://www.kaggle.com/datasets/niketchauhan/covid-19-time-series-data
 
-### 3.1. Cách 1: Download trực tiếp trên web
+### 6.1. Cách 1: Download trực tiếp trên web
 
 1. Mở từng link Kaggle bên trên.
 2. Bấm `Download`.
 3. Giải nén và đặt file/folder vào đúng vị trí (xem mục 4 bên dưới).
 
-### 3.2. Cách 2: dùng Kaggle CLI
+### 6.2. Cách 2: dùng Kaggle CLI
 
 #### Bước A: Tạo API token
 
@@ -111,7 +194,7 @@ Sau khi unzip xong, bạn cần sắp xếp lại thư mục theo đúng cấu t
 
 ---
 
-## 4. Cấu trúc dữ liệu bắt buộc
+## 7. Cấu trúc dữ liệu bắt buộc
 
 Sau khi tải dữ liệu, đảm bảo thư mục `data/` có dạng:
 
@@ -154,7 +237,7 @@ Mapping gợi ý (Ý -> Anh):
 
 ---
 
-## 5. Kiểm tra nhanh dữ liệu đã đặt đúng chưa
+## 8. Kiểm tra nhanh dữ liệu đã đặt đúng chưa
 
 Windows PowerShell:
 
@@ -168,9 +251,9 @@ Nếu kết quả là `True` cho 2 file CSV và có đủ 10 class ảnh, bạn 
 
 ---
 
-## 6. Cách chạy đồ án
+## 9. Cách chạy đồ án
 
-## 6.1. Cách khuyến nghị: chạy bằng Notebook
+## 9.1. Cách khuyến nghị: chạy bằng Notebook
 
 1. Mở folder project bằng VS Code.
 2. Chọn Python interpreter là `.venv`.
@@ -185,7 +268,7 @@ Notebook mẫu để test nhanh:
 Lưu ý:
 - Nhiều notebook đã có đoạn `sys.path.append('../src')`, vì vậy nếu mở notebook đúng vị trí trong repo là chạy được.
 
-### 6.2. Chạy một số module Python trực tiếp
+### 9.2. Chạy một số module Python trực tiếp
 
 Từ thư mục gốc project, bạn có thể chạy:
 
@@ -197,7 +280,7 @@ python src/table/preprocessing_detect_outlier.py
 
 ---
 
-## 7. Cách sử dụng
+## 10. Cách sử dụng
 
 - Nhóm image:
   - Tạo `ImageDataset`
@@ -216,7 +299,7 @@ Kết quả thường là:
 
 ---
 
-## 8. Lỗi thường gặp và cách xử lý
+## 11. Lỗi thường gặp và cách xử lý
 
 ### Lỗi 1: `ModuleNotFoundError: No module named ...`
 
