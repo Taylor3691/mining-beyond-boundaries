@@ -130,4 +130,11 @@ def save_table(path: str, data: pd.DataFrame, file_name: str = "processed_data.c
         data.to_csv(folder / file_name, index=False)
     except Exception as e:
         raise IOError(f"Error saving CSV file to {path}: {e}")
+    
+def jaccard_similarity(list1: list, list2: list) -> float:
+    """Tính chỉ số Jaccard Similarity giữa 2 tập hợp index"""
+    set1, set2 = set(list1), set(list2)
+    intersection = len(set1.intersection(set2))
+    union = len(set1.union(set2))
+    return intersection / union if union != 0 else 0.0
 
