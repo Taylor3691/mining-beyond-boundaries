@@ -41,6 +41,31 @@ class FeatureMatrixPredictionPreprocessing(Preprocessing):
 		n_jobs: int = -1,
 		model_kwargs: dict[str, Any] | None = None,
 	):
+		"""
+		Khởi tạo bộ tiền xử lý tạo ma trận đặc trưng cho dự báo chuỗi thời gian một bước.
+
+		Input:
+			target_column: Tên cột mục tiêu cần dự báo.
+			time_column: Tên cột thời gian dùng để sắp xếp chuỗi.
+			entity_column: Tên cột định danh thực thể (quốc gia, vùng...) nếu có.
+			entity_value: Giá trị thực thể cần lọc trước khi tổng hợp.
+			aggregation: Hàm tổng hợp khi gộp theo thời gian (sum, mean...).
+			forecast_horizon: Số bước dự báo về tương lai (mặc định 1).
+			train_ratio: Tỉ lệ chia tập huấn luyện theo trục thời gian.
+			max_pacf_lags: Số lag tối đa dùng khi ước lượng PACF.
+			pacf_method: Phương pháp tính PACF của statsmodels.
+			rolling_windows: Danh sách cửa sổ để tạo thống kê trượt.
+			decomposition_period: Chu kỳ mùa vụ cho phân rã chuỗi.
+			random_state: Hạt giống ngẫu nhiên cho mô hình.
+			n_estimators: Số cây của RandomForestRegressor.
+			max_depth: Độ sâu tối đa của cây (None là không giới hạn).
+			min_samples_leaf: Số mẫu tối thiểu ở mỗi nút lá.
+			n_jobs: Số luồng xử lý song song cho mô hình.
+			model_kwargs: Tham số bổ sung truyền thẳng vào mô hình.
+
+		Output:
+			None.
+		"""
 		if forecast_horizon <= 0:
 			raise ValueError("forecast_horizon must be >= 1")
 		if not (0 < train_ratio < 1):
@@ -93,13 +118,40 @@ class FeatureMatrixPredictionPreprocessing(Preprocessing):
 
 	@property
 	def feature_columns(self) -> list[str]:
+		"""
+		Lấy danh sách cột đặc trưng được dùng để huấn luyện mô hình.
+
+		Input:
+			Không có.
+
+		Output:
+			list[str]: Bản sao danh sách cột đặc trưng.
+		"""
 		return list(self._feature_columns)
 
 	@property
 	def feature_matrix(self) -> pd.DataFrame | None:
+		"""
+		Lấy ma trận giám sát đã xây dựng từ chuỗi thời gian.
+
+		Input:
+			Không có.
+
+		Output:
+			pd.DataFrame | None: Bản sao dữ liệu đặc trưng-target hoặc None nếu chưa có.
+		"""
 		return None if self._supervised_df is None else self._supervised_df.copy()
 
 	def _prepare_univariate_series(self, df: pd.DataFrame) -> pd.DataFrame:
+		"""
+		Chuẩn hóa dữ liệu đầu vào thành chuỗi đơn biến đã gộp theo thời gian.
+
+		Input:
+			df: Bảng dữ liệu gốc chứa cột thời gian và cột mục tiêu.
+
+		Output:
+			pd.DataFrame: Bảng gồm cột thời gian và cột target đã được làm sạch, lọc và tổng hợp.
+		"""
 		if self.time_column not in df.columns:
 			raise ValueError(f"Missing time column: {self.time_column}")
 		if self.target_column not in df.columns:
@@ -135,6 +187,15 @@ class FeatureMatrixPredictionPreprocessing(Preprocessing):
 		return grouped
 
 	def _infer_lag_order_from_pacf(self, series: pd.Series) -> int:
+		"""
+		Ước lượng bậc trễ tối ưu từ PACF dựa trên ngưỡng ý nghĩa xấp xỉ.
+
+		Input:
+			series: Chuỗi mục tiêu theo thời gian dùng để phân tích PACF.
+
+		Output:
+			int: Bậc trễ được chọn để tạo các lag features.
+		"""
 		clean_series = series.dropna().astype(float)
 		n_obs = len(clean_series)
 		if n_obs < 5:
@@ -163,6 +224,15 @@ class FeatureMatrixPredictionPreprocessing(Preprocessing):
 		return int(lag_order)
 
 	def _decompose_series(self, series: pd.Series) -> tuple[pd.Series, pd.Series, pd.Series]:
+		"""
+		Phân rã chuỗi thành các thành phần trend, seasonal và residual.
+
+		Input:
+			series: Chuỗi mục tiêu cần phân rã.
+
+		Output:
+			tuple[pd.Series, pd.Series, pd.Series]: Bộ ba (trend, seasonal, residual).
+		"""
 		target = series.astype(float)
 
 		try:
@@ -188,6 +258,15 @@ class FeatureMatrixPredictionPreprocessing(Preprocessing):
 			return trend, seasonal, resid
 
 	def _add_rolling_features(self, frame: pd.DataFrame) -> pd.DataFrame:
+		"""
+		Bổ sung các đặc trưng thống kê trượt dựa trên target trễ 1 bước.
+
+		Input:
+			frame: Bảng dữ liệu hiện tại chứa ít nhất cột target.
+
+		Output:
+			pd.DataFrame: Bảng dữ liệu mới có thêm các cột rolling mean/std/min/max.
+		"""
 		output = frame.copy()
 		lagged_target = output["target"].shift(1)
 
@@ -200,6 +279,15 @@ class FeatureMatrixPredictionPreprocessing(Preprocessing):
 		return output
 
 	def _add_time_features(self, frame: pd.DataFrame) -> pd.DataFrame:
+		"""
+		Sinh các đặc trưng lịch thời gian và biến chu kỳ từ cột thời gian.
+
+		Input:
+			frame: Bảng dữ liệu chứa cột thời gian đã chuẩn hóa kiểu datetime.
+
+		Output:
+			pd.DataFrame: Bảng dữ liệu mới có thêm các cột đặc trưng theo thời gian.
+		"""
 		output = frame.copy()
 		dt = output[self.time_column].dt
 
@@ -222,6 +310,16 @@ class FeatureMatrixPredictionPreprocessing(Preprocessing):
 		return output
 
 	def _build_supervised_frame(self, grouped_df: pd.DataFrame, lag_order: int) -> pd.DataFrame:
+		"""
+		Tạo ma trận giám sát cuối cùng từ chuỗi đã gộp và bậc trễ được chọn.
+
+		Input:
+			grouped_df: Dữ liệu chuỗi đã gộp theo thời gian và có cột target.
+			lag_order: Số bậc trễ dùng để sinh lag features.
+
+		Output:
+			pd.DataFrame: Bảng supervised đã có đặc trưng và nhãn dự báo tương lai.
+		"""
 		frame = grouped_df.copy()
 
 		for lag in range(1, lag_order + 1):
@@ -246,10 +344,29 @@ class FeatureMatrixPredictionPreprocessing(Preprocessing):
 		return cleaned
 
 	def _get_feature_columns(self, supervised_df: pd.DataFrame) -> list[str]:
+		"""
+		Lấy danh sách tên cột đặc trưng sau khi loại cột thời gian và nhãn đích.
+
+		Input:
+			supervised_df: Bảng supervised đã tạo đầy đủ đặc trưng.
+
+		Output:
+			list[str]: Danh sách tên cột dùng làm đầu vào mô hình.
+		"""
 		excluded = {self.time_column, "target", self._target_name}
 		return [col for col in supervised_df.columns if col not in excluded]
 
 	def _temporal_split(self, X: pd.DataFrame, y: pd.Series):
+		"""
+		Chia tập train/test theo thứ tự thời gian, không xáo trộn dữ liệu.
+
+		Input:
+			X: Ma trận đặc trưng đầu vào.
+			y: Chuỗi nhãn mục tiêu tương ứng với X.
+
+		Output:
+			tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]: X_train, X_test, y_train, y_test.
+		"""
 		split_idx = int(len(X) * self.train_ratio)
 		if split_idx <= 0 or split_idx >= len(X):
 			raise ValueError("Cannot split train/test with current train_ratio and dataset length.")
@@ -261,6 +378,16 @@ class FeatureMatrixPredictionPreprocessing(Preprocessing):
 		return X_train, X_test, y_train, y_test
 
 	def fit(self, df: pd.DataFrame, y=None):
+		"""
+		Huấn luyện pipeline đặc trưng + Random Forest và tính metric trên tập test theo thời gian.
+
+		Input:
+			df: Dữ liệu chuỗi thời gian gốc dùng để huấn luyện.
+			y: Tham số dự phòng theo chuẩn sklearn, không sử dụng trong pipeline này.
+
+		Output:
+			FeatureMatrixPredictionPreprocessing: Chính đối tượng hiện tại sau khi fit.
+		"""
 		self._raw_series_df = self._prepare_univariate_series(df)
 		self.lag_order_ = self._infer_lag_order_from_pacf(self._raw_series_df["target"])
 
@@ -307,21 +434,67 @@ class FeatureMatrixPredictionPreprocessing(Preprocessing):
 		return self
 
 	def transform(self, df: pd.DataFrame) -> pd.DataFrame:
+		"""
+		Biến đổi dữ liệu mới thành ma trận supervised theo cấu hình hiện tại.
+
+		Input:
+			df: Dữ liệu chuỗi thời gian cần chuyển thành đặc trưng.
+
+		Output:
+			pd.DataFrame: Bảng supervised đã tạo từ dữ liệu đầu vào.
+		"""
 		grouped = self._prepare_univariate_series(df)
 		lag_order = self.lag_order_ if self.lag_order_ is not None else self._infer_lag_order_from_pacf(grouped["target"])
 		return self._build_supervised_frame(grouped, lag_order=lag_order)
 
 	def fit_transform(self, df: pd.DataFrame, y=None) -> pd.DataFrame:
+		"""
+		Thực hiện fit rồi trả về trực tiếp ma trận supervised đã huấn luyện.
+
+		Input:
+			df: Dữ liệu chuỗi thời gian đầu vào.
+			y: Tham số dự phòng theo chuẩn sklearn, không dùng trong xử lý.
+
+		Output:
+			pd.DataFrame: Bản sao ma trận supervised sau khi fit.
+		"""
 		self.fit(df, y)
 		return self._supervised_df.copy()
 
 	def run(self, obj):
+		"""
+		Điểm vào thực thi theo pattern visitor của hệ thống pipeline.
+
+		Input:
+			obj: Đối tượng dataset cần xử lý.
+
+		Output:
+			None.
+		"""
 		self.visitTableDataset(obj)
 
 	def visitImageDataset(self, obj):
+		"""
+		Thông báo không hỗ trợ dataset ảnh trong tiền xử lý này.
+
+		Input:
+			obj: Đối tượng dataset ảnh (không được hỗ trợ).
+
+		Output:
+			None.
+		"""
 		print(f"[WARNING] {self.__class__.__name__} does not support ImageDataset.")
 
 	def visitTableDataset(self, obj):
+		"""
+		Áp dụng pipeline lên dataset bảng và cập nhật lại các thuộc tính đầu ra trên dataset.
+
+		Input:
+			obj: Đối tượng dataset có thuộc tính data để huấn luyện và biến đổi.
+
+		Output:
+			None.
+		"""
 		self._dataset_name = getattr(obj, "_folder_path", "TimeSeriesDataset")
 
 		try:
@@ -345,9 +518,27 @@ class FeatureMatrixPredictionPreprocessing(Preprocessing):
 			self.log()
 
 	def get_metrics(self) -> dict[str, float]:
+		"""
+		Lấy bộ chỉ số đánh giá hiện tại của mô hình dự báo.
+
+		Input:
+			Không có.
+
+		Output:
+			dict[str, float]: Bản sao các metric như MAE, RMSE, lag_order, feature_count.
+		"""
 		return dict(self.metrics_)
 
 	def log(self):
+		"""
+		In nhật ký tóm tắt trạng thái xử lý và kết quả đánh giá.
+
+		Input:
+			Không có.
+
+		Output:
+			None.
+		"""
 		print("\n" + "=" * 60)
 		print(f"Step       : {self._step_name}")
 		print(f"Dataset    : {self._dataset_name}")

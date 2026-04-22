@@ -27,12 +27,16 @@ class GrangerCausalityTesting(Testing):
 	):
 		"""
 		Khởi tạo bộ kiểm định Granger Causality.
-
+		
 		Input:
-			variables: Danh sách các biến cần kiểm định.
-			max_lag: Độ trễ tối đa.
-			alpha: Mức ý nghĩa thống kê.
-			test_stat: Loại thống kê kiểm định (mặc định ssr_chi2test).
+		    variables: Danh sách biến cần đưa vào kiểm định nhân quả.
+		    max_lag: Độ trễ tối đa dùng trong kiểm định chuỗi thời gian.
+		    alpha: Mức ý nghĩa thống kê dùng để đưa ra kết luận kiểm định.
+		    test_stat: Loại thống kê kiểm định được sử dụng để lấy p-value.
+		    verbose: Cờ bật/tắt in chi tiết trong quá trình chạy kiểm định.
+		
+		Output:
+		    None.
 		"""
 		super().__init__()
 		self.variables = variables
@@ -48,7 +52,15 @@ class GrangerCausalityTesting(Testing):
 		self.binary_matrix: pd.DataFrame | None = None
 
 	def log(self):
-		"""In thông tin tóm tắt kết quả kiểm định."""
+		"""
+		In thông tin tóm tắt kết quả kiểm định.
+		
+		Input:
+		    Không có.
+		
+		Output:
+		    None.
+		"""
 		print("=" * 70)
 		print(f"Step       : {self.step_name}")
 		print(f"Dataset    : {self.dataset_name}")
@@ -63,11 +75,27 @@ class GrangerCausalityTesting(Testing):
 		print("=" * 70)
 
 	def visitImageDataset(self, obj=None):
-		"""Kiểm định không hỗ trợ dữ liệu hình ảnh."""
+		"""
+		Kiểm định không hỗ trợ dữ liệu hình ảnh.
+		
+		Input:
+		    obj: Đối tượng dữ liệu đầu vào cần thực thi kiểm định.
+		
+		Output:
+		    None.
+		"""
 		raise ValueError("GrangerCausalityTesting chỉ hỗ trợ dữ liệu dạng bảng/time series.")
 
 	def visitTableDataset(self, obj):
-		"""Thực thi kiểm định trên đối tượng TableDataset."""
+		"""
+		Thực thi kiểm định trên đối tượng TableDataset.
+		
+		Input:
+		    obj: Đối tượng dữ liệu đầu vào cần thực thi kiểm định.
+		
+		Output:
+		    None.
+		"""
 		self.dataset_name = getattr(obj, "_folder_path", type(obj).__name__)
 		if not hasattr(obj, "data") or obj.data is None:
 			raise ValueError("Dataset không hợp lệ hoặc chưa nạp dữ liệu (obj.data is None).")
@@ -78,7 +106,15 @@ class GrangerCausalityTesting(Testing):
 		self.test(obj.data)
 
 	def run(self, obj):
-		"""Điểm vào thực thi kiểm định Granger."""
+		"""
+		Điểm vào thực thi kiểm định Granger.
+		
+		Input:
+		    obj: Đối tượng dữ liệu đầu vào cần thực thi kiểm định.
+		
+		Output:
+		    None.
+		"""
 		try:
 			obj_type = type(obj).__name__
 			if obj_type in {"TableDataset", "TimeSeriesDataset"}:
@@ -98,12 +134,12 @@ class GrangerCausalityTesting(Testing):
 	def test(self, data: pd.DataFrame):
 		"""
 		Chạy Granger causality test cho mọi cặp biến số.
-
+		
 		Input:
-			data: DataFrame chứa các biến số theo trục thời gian.
-
+		    data: Dữ liệu đầu vào dùng cho bước kiểm định hoặc phân tích.
+		
 		Output:
-			Bộ ba ma trận (p_value_matrix, best_lag_matrix, binary_matrix).
+		    Giá trị trả về của hàm.
 		"""
 		# 1) Chỉ giữ cột số để đảm bảo statsmodels xử lý được
 		numeric_df = data.select_dtypes(include=[np.number]).copy()
@@ -184,7 +220,17 @@ class GrangerCausalityTesting(Testing):
 		return self.p_value_matrix, self.best_lag_matrix, self.binary_matrix
 
 	def visualize_directed_graph(self, title: str = "Granger Causality Directed Graph", save_path: str = None, show_edge_labels: bool = True):
-		"""Trực quan hóa kết quả thành đồ thị hướng."""
+		"""
+		Trực quan hóa kết quả thành đồ thị hướng.
+		
+		Input:
+		    title: Tiêu đề biểu đồ trực quan hóa.
+		    save_path: Đường dẫn lưu file kết quả trực quan hóa.
+		    show_edge_labels: Cờ xác định có hiển thị nhãn cạnh trên đồ thị hay không.
+		
+		Output:
+		    None.
+		"""
 		if self.p_value_matrix is None:
 			raise ValueError("Chưa có kết quả kiểm định. Hãy chạy run(obj) hoặc test(data) trước.")
 
@@ -197,7 +243,15 @@ class GrangerCausalityTesting(Testing):
 		)
 
 	def get_significant_pairs(self) -> list[dict[str, Any]]:
-		"""Trả về danh sách các cặp biến có ý nghĩa thống kê."""
+		"""
+		Trả về danh sách các cặp biến có ý nghĩa thống kê.
+		
+		Input:
+		    Không có.
+		
+		Output:
+		    Giá trị trả về của hàm.
+		"""
 		if self.p_value_matrix is None or self.best_lag_matrix is None:
 			raise ValueError("Chưa có kết quả kiểm định. Hãy chạy run(obj) hoặc test(data) trước.")
 

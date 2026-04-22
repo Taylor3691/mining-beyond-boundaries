@@ -9,10 +9,10 @@ class KolmogorovSmirnovTesting(DistributionTesting):
     def __init__(self, alpha=0.05):
         """
         Khởi tạo kiểm định Kolmogorov-Smirnov cho hai mẫu.
-
+        
         Input:
-            alpha: Mức ý nghĩa thống kê (mặc định 0.05).
-
+            alpha: Mức ý nghĩa thống kê dùng để đưa ra kết luận kiểm định.
+        
         Output:
             None.
         """
@@ -29,12 +29,12 @@ class KolmogorovSmirnovTesting(DistributionTesting):
     def visitImageDataset(self, obj: ImageDataset):
         """
         Kiểm định phân phối cho dữ liệu hình ảnh.
-
+        
         Input:
-            obj: Đối tượng ImageDataset chứa _origin_images và _processed_images.
-
+            obj: Đối tượng dữ liệu đầu vào cần thực thi kiểm định.
+        
         Output:
-            None (cập nhật statistic, p_value, conclusion).
+            None.
         """
         if not hasattr(obj, '_origin_images') or not hasattr(obj, '_processed_images'):
             raise AttributeError("ImageDataset phải có thuộc tính '_origin_images' và '_processed_images'")
@@ -51,12 +51,12 @@ class KolmogorovSmirnovTesting(DistributionTesting):
     def visitTableDataset(self, obj):
         """
         Kiểm định phân phối cho dữ liệu bảng.
-
+        
         Input:
-            obj: Đối tượng TableDataset chứa _origin_data và data hiện tại.
-
+            obj: Đối tượng dữ liệu đầu vào cần thực thi kiểm định.
+        
         Output:
-            None (cập nhật statistic, p_value, conclusion).
+            None.
         """
         if not hasattr(obj, '_origin_data') or getattr(obj, '_origin_data') is None:
              raise AttributeError("TableDataset phải có thuộc tính '_origin_data' để thực hiện KS Test. Hãy cập nhật TableDataset.")
@@ -76,10 +76,10 @@ class KolmogorovSmirnovTesting(DistributionTesting):
     def run(self, obj):
         """
         Thực thi kiểm định dựa trên kiểu dữ liệu của đối tượng.
-
+        
         Input:
-            obj: Đối tượng ImageDataset hoặc TableDataset.
-
+            obj: Đối tượng dữ liệu đầu vào cần thực thi kiểm định.
+        
         Output:
             None.
         """
@@ -95,12 +95,12 @@ class KolmogorovSmirnovTesting(DistributionTesting):
     def log(self):
         """
         In báo cáo kết quả kiểm định ra màn hình.
-
+        
         Input:
             Không có.
-
+        
         Output:
-            None (in ra màn hình).
+            None.
         """
         print(f"Step: {self.step_name}")
         print(f"Kiểm định: {self.test_name}")
@@ -120,13 +120,13 @@ class KolmogorovSmirnovTesting(DistributionTesting):
     def test(self, data_orig: np.ndarray, data_proc: np.ndarray):
         """
         Thực hiện tính toán chỉ số thống kê KS.
-
+        
         Input:
-            data_orig: Mảng dữ liệu gốc.
-            data_proc: Mảng dữ liệu đã xử lý.
-
+            data_orig: Mảng dữ liệu gốc trước khi xử lý.
+            data_proc: Mảng dữ liệu sau khi xử lý để đối chiếu kiểm định.
+        
         Output:
-            None (cập nhật statistic, p_value, conclusion).
+            Giá trị trả về của hàm.
         """
         self.statistic, self.p_value = stats.ks_2samp(data_orig, data_proc)
         
@@ -139,7 +139,16 @@ class KolmogorovSmirnovTesting(DistributionTesting):
 
 class ShapiroWilkTesting(DistributionTesting):
     def __init__(self, column_name: str, alpha: float = 0.05):
-        """Khởi tạo kiểm định Shapiro-Wilk cho phân phối chuẩn."""
+        """
+        Khởi tạo kiểm định Shapiro-Wilk cho phân phối chuẩn.
+        
+        Input:
+            column_name: Tên cột dữ liệu cần kiểm định.
+            alpha: Mức ý nghĩa thống kê dùng để đưa ra kết luận kiểm định.
+        
+        Output:
+            None.
+        """
         super().__init__()
         self._step_name = "Shapiro-Wilk Normality Test"
         self._column_name = column_name
@@ -149,7 +158,15 @@ class ShapiroWilkTesting(DistributionTesting):
         self._is_normal = False
 
     def run(self):
-        """Thực thi toàn bộ quy trình kiểm định."""
+        """
+        Thực thi toàn bộ quy trình kiểm định.
+        
+        Input:
+            Không có.
+        
+        Output:
+            None.
+        """
         if self._dataset is None:
             self._status = "Failed — Dataset is None"
             return
@@ -160,7 +177,15 @@ class ShapiroWilkTesting(DistributionTesting):
             self.test()
 
     def log(self):
-        """In trạng thái thực thi kiểm định."""
+        """
+        In trạng thái thực thi kiểm định.
+        
+        Input:
+            Không có.
+        
+        Output:
+            None.
+        """
         print("=" * 55)
         print(f"Step    : {self._step_name}")
         print(f"Column  : {self._column_name}")
@@ -169,7 +194,15 @@ class ShapiroWilkTesting(DistributionTesting):
         print("=" * 55)
 
     def visitTableDataset(self, obj: TableDataset):
-        """Kiểm tra sự tồn tại của dữ liệu và cột cần phân tích."""
+        """
+        Kiểm tra sự tồn tại của dữ liệu và cột cần phân tích.
+        
+        Input:
+            obj: Đối tượng dữ liệu đầu vào cần thực thi kiểm định.
+        
+        Output:
+            None.
+        """
         try:
             self._dataset = obj
             if obj.data is None or obj.data.empty:
@@ -185,7 +218,15 @@ class ShapiroWilkTesting(DistributionTesting):
             self._status = f"Failed in visitTableDataset() — {str(e)}"
 
     def test(self):
-        """Thực hiện kiểm định Shapiro-Wilk trên cột dữ liệu."""
+        """
+        Thực hiện kiểm định Shapiro-Wilk trên cột dữ liệu.
+        
+        Input:
+            Không có.
+        
+        Output:
+            None.
+        """
         try:
             data = self._dataset.data[self._column_name].dropna().values
             
@@ -206,7 +247,15 @@ class ShapiroWilkTesting(DistributionTesting):
             self._status = f"Failed in test() — {str(e)}"
 
     def _analyze(self):
-        """Phân tích kết quả và hiển thị báo cáo chi tiết."""
+        """
+        Phân tích kết quả và hiển thị báo cáo chi tiết.
+        
+        Input:
+            Không có.
+        
+        Output:
+            None.
+        """
         conclusion = "**CHẤP NHẬN** giả thuyết H0 (Dữ liệu tuân theo phân phối chuẩn)." if self._is_normal else "**BÁC BỎ** giả thuyết H0 (Dữ liệu KHÔNG tuân theo phân phối chuẩn)."
         
         practical_note = ""
@@ -235,7 +284,16 @@ class ShapiroWilkTesting(DistributionTesting):
 
 class AgostinoPearsonTesting(DistributionTesting):
     def __init__(self, column_name: str, alpha: float = 0.05):
-        """Khởi tạo kiểm định D'Agostino-Pearson cho phân phối chuẩn."""
+        """
+        Khởi tạo kiểm định D'Agostino-Pearson cho phân phối chuẩn.
+        
+        Input:
+            column_name: Tên cột dữ liệu cần kiểm định.
+            alpha: Mức ý nghĩa thống kê dùng để đưa ra kết luận kiểm định.
+        
+        Output:
+            None.
+        """
         super().__init__()
         self._step_name = "D'Agostino-Pearson Normality Test"
         self._column_name = column_name
@@ -245,7 +303,15 @@ class AgostinoPearsonTesting(DistributionTesting):
         self._is_normal = False
 
     def run(self):
-        """Thực thi toàn bộ quy trình kiểm định."""
+        """
+        Thực thi toàn bộ quy trình kiểm định.
+        
+        Input:
+            Không có.
+        
+        Output:
+            None.
+        """
         if self._dataset is None:
             self._status = "Failed — Dataset is None"
             return
@@ -254,7 +320,15 @@ class AgostinoPearsonTesting(DistributionTesting):
             self.test()
 
     def log(self):
-        """In trạng thái thực thi kiểm định."""
+        """
+        In trạng thái thực thi kiểm định.
+        
+        Input:
+            Không có.
+        
+        Output:
+            None.
+        """
         print("=" * 55)
         print(f"Step    : {self._step_name}")
         print(f"Column  : {self._column_name}")
@@ -263,7 +337,15 @@ class AgostinoPearsonTesting(DistributionTesting):
         print("=" * 55)
 
     def visitTableDataset(self, obj: TableDataset):
-        """Kiểm tra sự tồn tại của dữ liệu và cột cần phân tích."""
+        """
+        Kiểm tra sự tồn tại của dữ liệu và cột cần phân tích.
+        
+        Input:
+            obj: Đối tượng dữ liệu đầu vào cần thực thi kiểm định.
+        
+        Output:
+            None.
+        """
         try:
             self._dataset = obj
             if obj.data is None or obj.data.empty:
@@ -279,7 +361,15 @@ class AgostinoPearsonTesting(DistributionTesting):
             self._status = f"Failed in visitTableDataset() — {str(e)}"
 
     def test(self):
-        """Thực hiện kiểm định D'Agostino-Pearson trên cột dữ liệu."""
+        """
+        Thực hiện kiểm định D'Agostino-Pearson trên cột dữ liệu.
+        
+        Input:
+            Không có.
+        
+        Output:
+            None.
+        """
         try:
             data = self._dataset.data[self._column_name].dropna().values
             
@@ -296,7 +386,15 @@ class AgostinoPearsonTesting(DistributionTesting):
             self._status = f"Failed in test() — {str(e)}"
 
     def _analyze(self):
-        """Phân tích kết quả và hiển thị báo cáo chi tiết."""
+        """
+        Phân tích kết quả và hiển thị báo cáo chi tiết.
+        
+        Input:
+            Không có.
+        
+        Output:
+            None.
+        """
         conclusion = "**CHẤP NHẬN** giả thuyết H0 (Dữ liệu tuân theo phân phối chuẩn)." if self._is_normal else "**BÁC BỎ** giả thuyết H0 (Dữ liệu KHÔNG tuân theo phân phối chuẩn)."
         
         practical_note = ""

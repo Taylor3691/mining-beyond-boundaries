@@ -10,10 +10,13 @@ class LeveneTesting(Testing):
 	def __init__(self, alpha: float = 0.05, center: str = "median"):
 		"""
 		Khởi tạo kiểm định Levene.
-
+		
 		Input:
-			alpha: Mức ý nghĩa thống kê.
-			center: Phương pháp tính tâm (mean, median, trimmed).
+		    alpha: Mức ý nghĩa thống kê dùng để đưa ra kết luận kiểm định.
+		    center: Phương pháp xác định tâm khi thực hiện Levene test.
+		
+		Output:
+		    None.
 		"""
 		if center not in {"mean", "median", "trimmed"}:
 			raise ValueError("center phải là một trong: 'mean', 'median', 'trimmed'")
@@ -30,7 +33,15 @@ class LeveneTesting(Testing):
 		self.is_rejected = False
 
 	def visitImageDataset(self, obj: ImageDataset):
-		"""Kiểm định phương sai cho dữ liệu hình ảnh."""
+		"""
+		Kiểm định phương sai cho dữ liệu hình ảnh.
+		
+		Input:
+		    obj: Đối tượng dữ liệu đầu vào cần thực thi kiểm định.
+		
+		Output:
+		    None.
+		"""
 		if not hasattr(obj, "_origin_images") or not hasattr(obj, "_processed_images"):
 			raise AttributeError("ImageDataset phải có thuộc tính '_origin_images' và '_processed_images'")
 
@@ -43,7 +54,15 @@ class LeveneTesting(Testing):
 		return
 
 	def visitTableDataset(self, obj: TableDataset):
-		"""Kiểm định phương sai cho dữ liệu bảng."""
+		"""
+		Kiểm định phương sai cho dữ liệu bảng.
+		
+		Input:
+		    obj: Đối tượng dữ liệu đầu vào cần thực thi kiểm định.
+		
+		Output:
+		    None.
+		"""
 		if not hasattr(obj, "_origin_data") or getattr(obj, "_origin_data") is None:
 			raise AttributeError("TableDataset phải có thuộc tính '_origin_data' để thực hiện Levene Test.")
 
@@ -58,7 +77,15 @@ class LeveneTesting(Testing):
 		return
 
 	def run(self, obj):
-		"""Thực thi kiểm định dựa trên kiểu đối tượng truyền vào."""
+		"""
+		Thực thi kiểm định dựa trên kiểu đối tượng truyền vào.
+		
+		Input:
+		    obj: Đối tượng dữ liệu đầu vào cần thực thi kiểm định.
+		
+		Output:
+		    None.
+		"""
 		obj_type = type(obj).__name__
 		if obj_type == "ImageDataset":
 			self.visitImageDataset(obj)
@@ -69,7 +96,15 @@ class LeveneTesting(Testing):
 		return
 
 	def log(self):
-		"""In tóm tắt kết quả kiểm định ra màn hình."""
+		"""
+		In tóm tắt kết quả kiểm định ra màn hình.
+		
+		Input:
+		    Không có.
+		
+		Output:
+		    None.
+		"""
 		print(f"Step: {self.step_name}")
 		print(f"Kiểm định: {self.test_name}")
 		print(f"Giả thuyết H0: {self.h0_hypothesis}")
@@ -91,13 +126,13 @@ class LeveneTesting(Testing):
 	def test(self, data_orig: np.ndarray, data_proc: np.ndarray):
 		"""
 		Thực hiện tính toán thống kê Levene.
-
+		
 		Input:
-			data_orig: Mảng dữ liệu gốc.
-			data_proc: Mảng dữ liệu đã xử lý.
-
+		    data_orig: Mảng dữ liệu gốc trước khi xử lý.
+		    data_proc: Mảng dữ liệu sau khi xử lý để đối chiếu kiểm định.
+		
 		Output:
-			Bộ tham số (statistic, p_value).
+		    Giá trị trả về của hàm.
 		"""
 		data_orig = np.asarray(data_orig, dtype=float)
 		data_proc = np.asarray(data_proc, dtype=float)

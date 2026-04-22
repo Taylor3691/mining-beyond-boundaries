@@ -7,7 +7,15 @@ from table.dataset import TableDataset
 
 class MCARLittleTesting(DistributionTesting):
     def __init__(self, alpha: float = 0.05):
-        """Khởi tạo kiểm định Little's MCAR cho dữ liệu thiếu."""
+        """
+        Khởi tạo kiểm định Little's MCAR cho dữ liệu thiếu.
+        
+        Input:
+            alpha: Mức ý nghĩa thống kê dùng để đưa ra kết luận kiểm định.
+        
+        Output:
+            None.
+        """
         super().__init__()
         self._step_name = "Little's MCAR Test (Global Chi-Square)"
         self._alpha = alpha
@@ -17,7 +25,15 @@ class MCARLittleTesting(DistributionTesting):
         self._is_mcar = False
 
     def run(self):
-        """Thực thi toàn bộ quy trình kiểm định."""
+        """
+        Thực thi toàn bộ quy trình kiểm định.
+        
+        Input:
+            Không có.
+        
+        Output:
+            None.
+        """
         if self._dataset is None:
             self._status = "Failed — Dataset is None"
             return
@@ -27,7 +43,15 @@ class MCARLittleTesting(DistributionTesting):
             self.test()
 
     def log(self):
-        """In trạng thái thực thi kiểm định."""
+        """
+        In trạng thái thực thi kiểm định.
+        
+        Input:
+            Không có.
+        
+        Output:
+            None.
+        """
         print("=" * 55)
         print(f"Step    : {self._step_name}")
         print(f"Dataset : {self._dataset._folder_path if self._dataset else 'None'}")
@@ -35,7 +59,15 @@ class MCARLittleTesting(DistributionTesting):
         print("=" * 55)
 
     def visitTableDataset(self, obj):
-        """Gắn dữ liệu TableDataset vào bộ kiểm định."""
+        """
+        Gắn dữ liệu TableDataset vào bộ kiểm định.
+        
+        Input:
+            obj: Đối tượng dữ liệu đầu vào cần thực thi kiểm định.
+        
+        Output:
+            None.
+        """
         try:
             self._dataset = obj
             self._status = "Success"
@@ -43,7 +75,15 @@ class MCARLittleTesting(DistributionTesting):
             self._status = f"Failed — {str(e)}"
 
     def test(self):
-        """Thực hiện Little's MCAR Test bằng phương pháp xấp xỉ Chi-Square."""
+        """
+        Thực hiện Little's MCAR Test bằng phương pháp xấp xỉ Chi-Square.
+        
+        Input:
+            Không có.
+        
+        Output:
+            None.
+        """
         try:
             # 1. Chỉ lấy dữ liệu số (Numeric) để tính toán ma trận
             df = self._dataset.data.select_dtypes(include=[np.number])
@@ -120,7 +160,15 @@ class MCARLittleTesting(DistributionTesting):
             self._status = f"Failed in test() — {str(e)}"
 
     def _analyze(self):
-        """Phân tích kết luận và hiển thị báo cáo chi tiết."""
+        """
+        Phân tích kết luận và hiển thị báo cáo chi tiết.
+        
+        Input:
+            Không có.
+        
+        Output:
+            None.
+        """
         if self._stat is None:
             display(Markdown("### Dataset không có dữ liệu thiếu."))
             return
@@ -139,7 +187,7 @@ class MCARLittleTesting(DistributionTesting):
 
 ### 1. Kết quả Thống kê
 - **Giả thuyết H0:** Sự thiếu dữ liệu là hoàn toàn ngẫu nhiên (MCAR).
-- **Giá trị Chi-Square ($\chi^2$):** `{self._stat:.4f}`
+- **Giá trị Chi-Square ($\\chi^2$):** `{self._stat:.4f}`
 - **Bậc tự do (df):** `{self._df_chi2}`
 - **p-Value:** `{self._p_value:.4e}` (Alpha = `{self._alpha}`)
 
