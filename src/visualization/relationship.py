@@ -8,11 +8,11 @@ def visualize_brightness_contrast_boxplot(df: pd.DataFrame) -> None:
     """
     Vẽ boxplot độ sáng và độ tương phản theo từng lớp.
 
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Output của compute_brightness_contrast_per_class()
-        có columns: ['class_name', 'brightness', 'contrast']
+    Input:
+        df: DataFrame chứa các cột class_name, brightness và contrast theo từng ảnh.
+
+    Output:
+        None (hiển thị và lưu biểu đồ matplotlib).
     """
     fig, axes = plt.subplots(1, 2, figsize=(16, 6))
     fig.suptitle("Phân tích Độ sáng & Độ tương phản theo Lớp", fontsize=14, fontweight="bold")
@@ -42,7 +42,15 @@ def visualize_brightness_contrast_boxplot(df: pd.DataFrame) -> None:
 
 def plot_ssim_curve(sizes: list, ssim_scores: list, save_path: str = "ssim_vs_size_curve.png"):
     """
-    Vẽ đồ thị đường (Line Chart) thể hiện mối liên hệ giữa kích thước và chỉ số SSIM 
+    Vẽ đồ thị đường thể hiện mối liên hệ giữa kích thước ảnh resize và chỉ số SSIM.
+
+    Input:
+        sizes: Danh sách kích thước ảnh (ví dụ 32, 64, 128).
+        ssim_scores: Danh sách điểm SSIM trung bình tương ứng với từng kích thước.
+        save_path: Đường dẫn lưu ảnh biểu đồ sau khi vẽ.
+
+    Output:
+        None (hiển thị và lưu biểu đồ matplotlib).
     """
     if len(sizes) != len(ssim_scores) or len(sizes) == 0:
         print("[Visualizer Error] Sizes and SSIM scores lists must have the same length and cannot be empty.")
@@ -89,6 +97,16 @@ def plot_ssim_curve(sizes: list, ssim_scores: list, save_path: str = "ssim_vs_si
     print(f"\n[Visualizer] SSIM relationship curve successfully saved at: {save_path}")
 
 def plot_pearson_heatmap(df: pd.DataFrame, title="Pearson Correlation Heatmap"):
+    """
+    Vẽ heatmap tương quan Pearson cho các biến số trong DataFrame.
+
+    Input:
+        df: DataFrame dữ liệu số dùng để tính tương quan.
+        title: Tiêu đề biểu đồ heatmap.
+
+    Output:
+        None (hiển thị biểu đồ matplotlib).
+    """
     plt.figure(figsize=(14, 12))
     # Tính ma trận tương quan Pearson
     corr = df.corr(method='pearson')
@@ -106,6 +124,16 @@ def plot_pearson_heatmap(df: pd.DataFrame, title="Pearson Correlation Heatmap"):
     plt.show()
 
 def plot_spearman_heatmap(df: pd.DataFrame, title="Spearman Correlation Heatmap"):
+    """
+    Vẽ heatmap tương quan Spearman cho các biến số trong DataFrame.
+
+    Input:
+        df: DataFrame dữ liệu số dùng để tính tương quan.
+        title: Tiêu đề biểu đồ heatmap.
+
+    Output:
+        None (hiển thị biểu đồ matplotlib).
+    """
     plt.figure(figsize=(14, 12))
     # Tính ma trận tương quan Spearman
     corr = df.corr(method='spearman')
@@ -127,6 +155,17 @@ def plot_dim_reduction_2d(X, labels, class_names=None, method='tsne',
                           title_suffix="", n_samples=1000):
     """
     Vẽ Scatter Plot 2D sau khi giảm chiều bằng t-SNE hoặc UMAP.
+
+    Input:
+        X: Ma trận đặc trưng đầu vào cần giảm chiều.
+        labels: Nhãn lớp tương ứng với từng mẫu trong X.
+        class_names: Danh sách tên lớp; nếu None sẽ hiển thị nhãn số.
+        method: Phương pháp giảm chiều (tsne hoặc umap).
+        title_suffix: Hậu tố bổ sung vào tiêu đề biểu đồ.
+        n_samples: Số mẫu tối đa dùng để trực quan hóa.
+
+    Output:
+        None (hiển thị biểu đồ matplotlib).
     """
     from sklearn.manifold import TSNE
 
@@ -211,25 +250,17 @@ def plot_granger_causality_directed_graph(
     show_edge_labels: bool = True,
 ):
     """
-    Vẽ đồ thị có hướng (directed graph) từ ma trận p-value của Granger causality.
+    Vẽ đồ thị có hướng từ ma trận p-value của kiểm định nhân quả Granger.
 
-    Quy ước ma trận:
-    - Hàng (index): biến gây tác động (cause)
-    - Cột (columns): biến bị tác động (effect)
-    - Nếu p_value_matrix.loc[cause, effect] < alpha => có cạnh cause -> effect
+    Input:
+        p_value_matrix: Ma trận p-value vuông, hàng là biến gây tác động và cột là biến bị tác động.
+        alpha: Ngưỡng ý nghĩa thống kê để quyết định có vẽ cạnh nhân quả hay không.
+        title: Tiêu đề biểu đồ đồ thị có hướng.
+        save_path: Đường dẫn lưu ảnh; nếu None thì chỉ hiển thị biểu đồ.
+        show_edge_labels: Cờ xác định có hiển thị nhãn p-value trên cạnh hay không.
 
-    Parameters
-    ----------
-    p_value_matrix : pd.DataFrame
-        Ma trận p-value vuông, cùng bộ tên biến ở index và columns.
-    alpha : float, default=0.05
-        Ngưỡng ý nghĩa thống kê.
-    title : str, default="Granger Causality Directed Graph"
-        Tiêu đề biểu đồ.
-    save_path : str | None, default=None
-        Đường dẫn lưu ảnh. Nếu None thì chỉ hiển thị.
-    show_edge_labels : bool, default=True
-        Hiển thị nhãn p-value trên cạnh.
+    Output:
+        None (hiển thị và tùy chọn lưu biểu đồ matplotlib).
     """
     if p_value_matrix is None or p_value_matrix.empty:
         print("[plot_granger_causality_directed_graph] Ma trận p-value rỗng.")
@@ -352,7 +383,15 @@ def plot_granger_causality_directed_graph(
 
     # --- Vẽ node trên cùng ---
     def _format_node_label(node_name: str) -> str:
-        """Tách nhãn dài thành 2 dòng để tránh bị cụt chữ trong node."""
+        """
+        Tách nhãn node dài thành 2 dòng để tránh bị cắt chữ khi hiển thị.
+
+        Input:
+            node_name: Tên node cần định dạng khi hiển thị trên đồ thị.
+
+        Output:
+            Giá trị trả về của hàm.
+        """
         text = str(node_name)
         if len(text) <= 7:
             return text

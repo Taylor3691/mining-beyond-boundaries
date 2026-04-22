@@ -10,9 +10,14 @@ from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 
 def plot_class_distribution(classes: list, counts: list):
     """
-    Hàm vẽ Bar Chart so sánh số lượng ảnh giữa các lớp:
-    - Nhấn mạnh lớp nhiều nhất (Đỏ) và ít nhất (Xanh lá)
-    - Vẽ đường cảnh báo nếu có lớp có số lượng vượt quá 3 lần lớp nhỏ nhất
+    Vẽ biểu đồ cột so sánh số lượng mẫu giữa các lớp và tô nổi bật lớp nhiều/ít nhất.
+
+    Input:
+        classes: Danh sách tên các lớp dữ liệu.
+        counts: Danh sách số lượng mẫu tương ứng với từng lớp.
+
+    Output:
+        None (hiển thị biểu đồ và lưu ảnh PNG).
     """
     if not classes or not counts:
         print("No data available to plot")
@@ -64,7 +69,16 @@ def plot_class_distribution(classes: list, counts: list):
     print(f"\n[Visualizer] Chart successfully saved at: {output_file}")
 
 def plot_histogram(pixel_data: np.ndarray, title_suffix: str = ""):
-    """Vẽ Histogram cho 3 kênh màu R-G-B."""
+    """
+    Vẽ Histogram phân phối cường độ pixel cho 3 kênh màu R-G-B.
+
+    Input:
+        pixel_data: Mảng dữ liệu pixel có dạng (N, 3) cho ba kênh màu.
+        title_suffix: Hậu tố bổ sung vào tiêu đề biểu đồ.
+
+    Output:
+        None (hiển thị biểu đồ matplotlib).
+    """
     fig, axes = plt.subplots(1, 3, figsize=(18, 5), sharey=True)
     fig.suptitle(f'Pixel Intensity Distribution (Histogram) {title_suffix}', fontweight='bold', fontsize=16)
     for i, col in enumerate(['red', 'green', 'blue']):
@@ -73,7 +87,16 @@ def plot_histogram(pixel_data: np.ndarray, title_suffix: str = ""):
     plt.tight_layout(); plt.show()
 
 def plot_kde(pixel_data: np.ndarray, title_suffix: str = ""):
-    """Vẽ KDE cho 3 kênh màu R-G-B (tự động lấy mẫu)."""
+    """
+    Vẽ đường mật độ KDE cho 3 kênh màu R-G-B và tự động lấy mẫu khi dữ liệu lớn.
+
+    Input:
+        pixel_data: Mảng dữ liệu pixel có dạng (N, 3) cho ba kênh màu.
+        title_suffix: Hậu tố bổ sung vào tiêu đề biểu đồ.
+
+    Output:
+        None (hiển thị biểu đồ matplotlib).
+    """
     fig, axes = plt.subplots(1, 3, figsize=(18, 5), sharey=True)
     fig.suptitle(f'Kernel Density Estimation (KDE) {title_suffix}', fontweight='bold', fontsize=16)
     for i, col in enumerate(['red', 'green', 'blue']):
@@ -84,6 +107,18 @@ def plot_kde(pixel_data: np.ndarray, title_suffix: str = ""):
     plt.tight_layout(); plt.show()
 
 def plot_distribution_by_class(images, labels, class_names, title_suffix=""):
+    """
+    Vẽ KDE phân phối màu theo từng lớp để so sánh sự khác biệt giữa các class.
+
+    Input:
+        images: Tập ảnh đầu vào có dạng (N, H, W, C).
+        labels: Nhãn lớp của từng ảnh.
+        class_names: Danh sách tên lớp tương ứng với nhãn số.
+        title_suffix: Hậu tố bổ sung vào tiêu đề biểu đồ.
+
+    Output:
+        None (hiển thị biểu đồ matplotlib).
+    """
     fig, axes = plt.subplots(1, 3, figsize=(20, 6), sharey=True)
     fig.suptitle(f'Color Distribution Comparison by Class (KDE) {title_suffix}', fontsize=16, fontweight='bold')
     
@@ -119,12 +154,16 @@ def plot_distribution_by_class(images, labels, class_names, title_suffix=""):
 def plot_tsne(images, labels, class_names, title_suffix="", n_samples=1000):
     """
     Vẽ biểu đồ t-SNE để visualize sự phân bố dữ liệu trong không gian 2D.
-    Args:
-        images (numpy.ndarray/list): Tập ảnh dạng (N, H, W, 3).
-        labels (numpy.ndarray/list): Nhãn của từng ảnh (dạng số nguyên).
-        class_names (list): Danh sách tên các lớp tương ứng.
-        title_suffix (str): Hậu tố thêm vào tiêu đề.
-        n_samples (int): Giới hạn số ảnh để t-SNE không bị chậm. 
+
+    Input:
+        images: Tập ảnh đầu vào có dạng (N, H, W, 3).
+        labels: Nhãn lớp của từng ảnh.
+        class_names: Danh sách tên lớp tương ứng với nhãn số.
+        title_suffix: Hậu tố thêm vào tiêu đề biểu đồ.
+        n_samples: Số mẫu tối đa dùng để chạy t-SNE.
+
+    Output:
+        None (hiển thị biểu đồ matplotlib).
     """
     images_arr = np.array(images)
     labels_arr = np.array(labels)
@@ -180,6 +219,14 @@ def plot_tsne(images, labels, class_names, title_suffix="", n_samples=1000):
 def plot_column_distribution(data_series: np.ndarray, column_name: str, test_name: str = ""):
     """
     Trực quan hóa phân phối của một cột dữ liệu số bằng Histogram kết hợp đường KDE.
+
+    Input:
+        data_series: Chuỗi dữ liệu số cần trực quan hóa phân phối.
+        column_name: Tên cột dữ liệu để hiển thị trên biểu đồ.
+        test_name: Tên kiểm định liên quan để ghi chú trên tiêu đề.
+
+    Output:
+        None (hiển thị biểu đồ matplotlib).
     """
     plt.figure(figsize=(10, 6))
     
@@ -198,13 +245,16 @@ def plot_ks_test_results(orig_data, norm_data, method_name, d_stat, p_value):
     """
     Vẽ biểu đồ so sánh kết quả kiểm định Kolmogorov-Smirnov (K-S Test).
     Hiển thị 3 biểu đồ đường ECDF: Ảnh gốc, Ảnh chuẩn hóa và Overlay (đã chuẩn hóa z-score).
-    
-    Args:
-        orig_data (np.ndarray): Dữ liệu pixel ảnh gốc.
-        norm_data (np.ndarray): Dữ liệu pixel ảnh sau chuẩn hóa.
-        method_name (str): Tên phương pháp chuẩn hóa.
-        d_stat (float): Trị số thống kê D của K-S test.
-        p_value (float): Trị số p-value của K-S test.
+
+    Input:
+        orig_data: Dữ liệu pixel gốc trước chuẩn hóa.
+        norm_data: Dữ liệu pixel sau chuẩn hóa.
+        method_name: Tên phương pháp chuẩn hóa đang đánh giá.
+        d_stat: Giá trị thống kê D từ kiểm định K-S.
+        p_value: Giá trị p-value từ kiểm định K-S.
+
+    Output:
+        None (hiển thị biểu đồ matplotlib).
     """
     fig, axes = plt.subplots(1, 3, figsize=(21, 6))
     colors, labs = ["#2980b9", "#c0392b"], ["Original", f"Normalized ({method_name})"]
@@ -213,7 +263,17 @@ def plot_ks_test_results(orig_data, norm_data, method_name, d_stat, p_value):
         sns.ecdfplot(data, color=col, label=label, ax=axes[i], lw=2)
         axes[i].set_title(f"ECDF — {label}"); axes[i].grid(ls='--', alpha=0.5); axes[i].legend()
 
-    def _z(arr): return (arr - arr.mean()) / (arr.std() + 1e-10)
+    def _z(arr):
+        """
+        Chuẩn hóa z-score cho mảng dữ liệu 1 chiều.
+
+        Input:
+            arr: Mảng dữ liệu số cần chuẩn hóa.
+
+        Output:
+            Giá trị trả về của hàm.
+        """
+        return (arr - arr.mean()) / (arr.std() + 1e-10)
     oz, nz = _z(orig_data), _z(norm_data)
     sns.ecdfplot(oz, color=colors[0], label="Original (z-scaled)", ax=axes[2], lw=2)
     sns.ecdfplot(nz, color=colors[1], label="Normalized (z-scaled)", ax=axes[2], lw=2, ls='--')
@@ -238,10 +298,13 @@ def plot_ks_comparison_summary(ks_results: list, alpha: float = 0.05):
     """
     Vẽ biểu đồ cột so sánh tổng hợp các trị số D và p-value của nhiều phương pháp chuẩn hóa.
     Làm nổi bật các phương pháp bác bỏ hoặc chấp nhận giả thuyết H0 dựa trên ngưỡng alpha.
-    
-    Args:
-        ks_results (list): Danh sách các dict chứa kết quả K-S test (Method, D, p-value).
-        alpha (float): Ngưỡng ý nghĩa thống kê (mặc định 0.05).
+
+    Input:
+        ks_results: Danh sách kết quả K-S, mỗi phần tử chứa Method, D và p-value.
+        alpha: Mức ý nghĩa thống kê để quyết định chấp nhận/bác bỏ giả thuyết H0.
+
+    Output:
+        None (hiển thị biểu đồ matplotlib).
     """
     methods  = [r["Method"] for r in ks_results]
     d_stats  = [float(r["K-S Stat (D)"]) for r in ks_results]
@@ -340,13 +403,16 @@ def plot_violin_comparison(
     """
     Vẽ violin plot để so sánh phân phối trước/sau scaling theo từng cột.
 
-    Args:
-        before_df (pd.DataFrame): Dữ liệu trước scaling.
-        after_dfs (dict[str, pd.DataFrame]): Từ điển {tên_phương_pháp: DataFrame sau scaling}.
-        columns (list[str] | None): Danh sách cột cần vẽ. Nếu None, tự động lấy tất cả cột số.
-        sample_size (int): Số mẫu tối đa cho mỗi nhóm để tránh vẽ quá nặng.
-        ncols (int): Số cột subplot trên mỗi hàng.
-        title_suffix (str): Hậu tố hiển thị thêm ở tiêu đề tổng.
+    Input:
+        before_df: DataFrame dữ liệu trước khi thực hiện scaling.
+        after_dfs: Từ điển ánh xạ tên phương pháp sang DataFrame sau scaling.
+        columns: Danh sách cột cần vẽ; nếu None sẽ tự chọn toàn bộ cột số.
+        sample_size: Số mẫu tối đa của mỗi nhóm để giảm tải khi vẽ.
+        ncols: Số cột subplot hiển thị trên mỗi hàng.
+        title_suffix: Hậu tố hiển thị thêm ở tiêu đề tổng.
+
+    Output:
+        None (hiển thị biểu đồ matplotlib).
     """
     if not isinstance(before_df, pd.DataFrame) or before_df.empty:
         print("[Violin] before_df không hợp lệ hoặc rỗng.")
@@ -424,6 +490,14 @@ def plot_violin_comparison(
 def plot_acf_chart(series, n_lags, title="ACF Plot"):
     """
     Vẽ biểu đồ Autocorrelation Function (ACF) cho chuỗi thời gian.
+
+    Input:
+        series: Chuỗi thời gian cần phân tích tự tương quan.
+        n_lags: Số độ trễ tối đa cần hiển thị.
+        title: Tiêu đề biểu đồ ACF.
+
+    Output:
+        None (hiển thị biểu đồ matplotlib).
     """
     fig, ax = plt.subplots(figsize=(14, 5))
     plot_acf(series.dropna(), lags=n_lags, ax=ax, title=title, color='#1f77b4')
@@ -436,6 +510,14 @@ def plot_acf_chart(series, n_lags, title="ACF Plot"):
 def plot_pacf_chart(series, n_lags, title="PACF Plot"):
     """
     Vẽ biểu đồ Partial Autocorrelation Function (PACF) cho chuỗi thời gian.
+
+    Input:
+        series: Chuỗi thời gian cần phân tích tự tương quan riêng phần.
+        n_lags: Số độ trễ tối đa cần hiển thị.
+        title: Tiêu đề biểu đồ PACF.
+
+    Output:
+        None (hiển thị biểu đồ matplotlib).
     """
     fig, ax = plt.subplots(figsize=(14, 5))
     plot_pacf(series.dropna(), lags=n_lags, ax=ax, title=title, color='#ff7f0e', method='ywm')

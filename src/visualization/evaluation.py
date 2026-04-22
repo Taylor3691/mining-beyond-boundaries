@@ -6,6 +6,13 @@ import numpy as np
 def plot_color_space_evaluation(results: list, save_path: str = "color_space_eval.png"):
     """
     Vẽ biểu đồ kép so sánh phương sai giải thích và F1-Score giữa các không gian màu.
+
+    Input:
+        results: Danh sách kết quả đánh giá theo từng không gian màu.
+        save_path: Đường dẫn lưu ảnh biểu đồ sau khi vẽ.
+
+    Output:
+        None (hiển thị và lưu biểu đồ matplotlib).
     """
     if not results:
         print("[Visualizer Error] Danh sách kết quả rỗng.")
@@ -43,6 +50,13 @@ def plot_color_space_evaluation(results: list, save_path: str = "color_space_eva
 def plot_normalization_learning_curves(results_dict: dict, save_path: str = "norm_learning_curves.png"):
     """
     Vẽ đường cong hội tụ (Learning Curves) so sánh độ mượt và tốc độ hội tụ của 4 phương pháp Chuẩn hóa.
+
+    Input:
+        results_dict: Từ điển ánh xạ tên phương pháp chuẩn hóa sang chuỗi độ chính xác theo epoch.
+        save_path: Đường dẫn lưu ảnh biểu đồ sau khi vẽ.
+
+    Output:
+        None (hiển thị và lưu biểu đồ matplotlib).
     """
     import matplotlib.pyplot as plt
     plt.figure(figsize=(10, 6))
@@ -64,6 +78,13 @@ def plot_normalization_learning_curves(results_dict: dict, save_path: str = "nor
 def plot_scree_pca(explained_variance_ratio: np.ndarray, save_path: str = "scree_plot_pca.png"):
     """
     Vẽ biểu đồ Scree Plot (Cumulative Explained Variance) để tìm mốc 90%, 95%, 99%.
+
+    Input:
+        explained_variance_ratio: Mảng tỷ lệ phương sai giải thích của từng thành phần PCA.
+        save_path: Đường dẫn lưu ảnh biểu đồ sau khi vẽ.
+
+    Output:
+        None (hiển thị và lưu biểu đồ matplotlib).
     """
     cumulative_variance = np.cumsum(explained_variance_ratio)
     
@@ -97,6 +118,15 @@ def plot_scree_pca(explained_variance_ratio: np.ndarray, save_path: str = "scree
 def plot_pca_scatter_2d(X_pca_2d: np.ndarray, labels: np.ndarray, class_names: list, save_path: str = "pca_scatter_2d.png"):
     """
     Trực quan hóa dữ liệu trên không gian 2D với 2 Principal Components đầu tiên.
+
+    Input:
+        X_pca_2d: Ma trận đặc trưng sau khi giảm chiều PCA xuống 2 thành phần.
+        labels: Mảng nhãn lớp tương ứng với từng mẫu dữ liệu.
+        class_names: Danh sách tên lớp để hiển thị trên chú giải.
+        save_path: Đường dẫn lưu ảnh biểu đồ sau khi vẽ.
+
+    Output:
+        None (hiển thị và lưu biểu đồ matplotlib).
     """
     plt.figure(figsize=(10, 8))
     unique_labels = np.unique(labels)
@@ -120,6 +150,15 @@ def plot_pca_scatter_2d(X_pca_2d: np.ndarray, labels: np.ndarray, class_names: l
 def plot_pca_scatter_3d(X_pca_3d: np.ndarray, labels: np.ndarray, class_names: list, save_path: str = "pca_scatter_3d.png"):
     """
     Trực quan hóa dữ liệu trên không gian 3D với 3 Principal Components đầu tiên.
+
+    Input:
+        X_pca_3d: Ma trận đặc trưng sau khi giảm chiều PCA xuống 3 thành phần.
+        labels: Mảng nhãn lớp tương ứng với từng mẫu dữ liệu.
+        class_names: Danh sách tên lớp để hiển thị trên chú giải.
+        save_path: Đường dẫn lưu ảnh biểu đồ sau khi vẽ.
+
+    Output:
+        None (hiển thị và lưu biểu đồ matplotlib).
     """
     fig = plt.figure(figsize=(10, 8))
     ax = fig.add_subplot(111, projection='3d')

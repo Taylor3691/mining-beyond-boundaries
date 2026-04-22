@@ -10,8 +10,8 @@ def plot_deduplicate_comparison(initial_count, final_count):
     Trực quan hóa số lượng ảnh trước và sau khi loại bỏ trùng lặp bằng biểu đồ thanh.
     
     Input:
-        initial_count (int): Số lượng ảnh ban đầu.
-        final_count (int): Số lượng ảnh sau khi xử lý.
+        initial_count: Số lượng ảnh ban đầu trước khi lọc trùng lặp.
+        final_count: Số lượng ảnh còn lại sau khi xử lý loại bỏ trùng lặp.
 
     Output:
         None (hiển thị biểu đồ matplotlib).
@@ -41,10 +41,12 @@ def plot_phash_comparison(img1, img2, hash1, hash2, distance, title="pHash Compa
     Hiển thị hai ảnh cạnh nhau kèm chuỗi Hash và khoảng cách Hamming.
     
     Input:
-        img1, img2 (numpy.ndarray): Hai ảnh cần so sánh (BGR từ OpenCV).
-        hash1, hash2 (str): Chuỗi pHash tương ứng.
-        distance (int): Khoảng cách Hamming giữa hai hash.
-        title (str): Tiêu đề biểu đồ.
+        img1: Ảnh thứ nhất dùng làm mẫu tham chiếu.
+        img2: Ảnh thứ hai cần đối chiếu với ảnh tham chiếu.
+        hash1: Chuỗi pHash tương ứng với ảnh thứ nhất.
+        hash2: Chuỗi pHash tương ứng với ảnh thứ hai.
+        distance: Khoảng cách Hamming giữa hai chuỗi hash.
+        title: Tiêu đề chính của biểu đồ.
 
     Output:
         None (hiển thị biểu đồ matplotlib).
@@ -71,13 +73,15 @@ def plot_phash_comparison(img1, img2, hash1, hash2, distance, title="pHash Compa
 
 def plot_normalization_comparison(img_orig: np.ndarray, img_norm: np.ndarray, method: str):
     """
-    Vẽ biểu đồ so sánh trực quan giữa ảnh gốc và ảnh sau khi chuẩn hóa, 
-    kèm theo phân phối Histogram và KDE cho từng kênh màu (RGB).
-    
-    Args:
-        img_orig (np.ndarray): Mảng ảnh gốc (uint8).
-        img_norm (np.ndarray): Mảng ảnh đã chuẩn hóa (float32).
-        method (str): Tên phương pháp chuẩn hóa dùng trong tiêu đề.
+    Vẽ biểu đồ so sánh ảnh gốc và ảnh sau chuẩn hóa, kèm Histogram và KDE theo từng kênh RGB.
+
+    Input:
+        img_orig: Mảng ảnh gốc trước chuẩn hóa.
+        img_norm: Mảng ảnh sau khi áp dụng chuẩn hóa.
+        method: Tên phương pháp chuẩn hóa để hiển thị trên tiêu đề.
+
+    Output:
+        None (hiển thị biểu đồ matplotlib).
     """
     # Xử lý hiển thị: Ảnh gốc giữ nguyên, ảnh chuẩn hóa được chuẩn hóa hiển thị về [0, 255]
     orig_rgb = img_orig
@@ -114,6 +118,13 @@ def plot_normalization_comparison(img_orig: np.ndarray, img_norm: np.ndarray, me
 def plot_feature_selection_comparison(k_list, results_dict):
     """
     Vẽ biểu đồ đường so sánh F1-score của các phương pháp lọc đặc trưng.
+
+    Input:
+        k_list: Danh sách số lượng đặc trưng được chọn ở từng mốc đánh giá.
+        results_dict: Từ điển ánh xạ tên phương pháp sang danh sách F1-score tương ứng.
+
+    Output:
+        None (hiển thị biểu đồ matplotlib).
     """
     # Palette chuyên dụng để phân biệt rõ các phương pháp
     markers = ['o', 's', 'D', '^', 'v', 'P', 'X']
@@ -144,6 +155,15 @@ def plot_feature_selection_comparison(k_list, results_dict):
 def plot_time_series(dates, values, feature_name, region="World"):
     """
     Trực quan hóa chuỗi thời gian để phân tích Trend, Seasonality và Noise bằng mắt.
+
+    Input:
+        dates: Trục thời gian của chuỗi dữ liệu.
+        values: Chuỗi giá trị quan sát theo thời gian.
+        feature_name: Tên biến đang được trực quan hóa.
+        region: Khu vực khảo sát (mặc định là World).
+
+    Output:
+        None (hiển thị biểu đồ matplotlib).
     """
     plt.figure(figsize=(15, 6))
     
@@ -169,6 +189,16 @@ def plot_time_series(dates, values, feature_name, region="World"):
 def plot_rolling_statistics(dates, values, feature_name, stat_type="Mean", region="World"):
     """
     Vẽ 4 đường trên cùng 1 biểu đồ: Data gốc, Window 7, 30, 90 cho Mean hoặc STD.
+
+    Input:
+        dates: Trục thời gian của chuỗi dữ liệu.
+        values: Chuỗi giá trị quan sát theo thời gian.
+        feature_name: Tên biến cần phân tích thống kê trượt.
+        stat_type: Loại thống kê trượt cần vẽ (Mean hoặc STD).
+        region: Khu vực khảo sát để hiển thị trên tiêu đề.
+
+    Output:
+        None (hiển thị biểu đồ matplotlib).
     """
     plt.figure(figsize=(15, 7))
     
@@ -206,7 +236,15 @@ def plot_rolling_statistics(dates, values, feature_name, stat_type="Mean", regio
 
 def plot_anomalies_single_method(dataset, anomaly_mask: np.ndarray, method_name: str = "Unknown Method"):
     """
-    Plots a Time Plot with anomalies for a specific method.
+    Vẽ chuỗi thời gian và đánh dấu các điểm dị thường theo một phương pháp.
+
+    Input:
+        dataset: Đối tượng dữ liệu chuỗi thời gian đã được nạp và set target.
+        anomaly_mask: Mảng boolean, True tại các vị trí được xem là dị thường.
+        method_name: Tên phương pháp phát hiện dị thường.
+
+    Output:
+        None (hiển thị biểu đồ matplotlib).
     """
     if dataset.data is None or dataset.target is None:
         raise ValueError("Dataset is not loaded or target is not set.")
@@ -234,9 +272,14 @@ def plot_anomalies_single_method(dataset, anomaly_mask: np.ndarray, method_name:
 
 def plot_anomalies_all_methods(dataset, anomalies_dict: Dict[str, np.ndarray]):
     """
-    Plots a Time Plot and simultaneously displays anomalies from multiple methods.
-    anomalies_dict: Dictionary with method name as key and boolean mask array as value.
-    Ex: {'Z-Score': mask1, 'Isolation Forest': mask2, 'STL': mask3}
+    Vẽ chuỗi thời gian và hiển thị đồng thời các điểm dị thường từ nhiều phương pháp.
+
+    Input:
+        dataset: Đối tượng dữ liệu chuỗi thời gian đã được nạp và set target.
+        anomalies_dict: Từ điển ánh xạ tên phương pháp sang mảng boolean đánh dấu dị thường.
+
+    Output:
+        None (hiển thị biểu đồ matplotlib).
     """
     if dataset.data is None or dataset.target is None:
         raise ValueError("Dataset is not loaded or target is not set.")
