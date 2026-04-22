@@ -7,7 +7,19 @@ from core import Visualization
 from visualization.relationship import plot_pearson_heatmap, plot_spearman_heatmap
 
 class CorrelationAnalysis(Visualization):
+    """Phân tích tương quan giữa các biến số trong tập dữ liệu bảng."""
+
     def __init__(self, method: str = 'pearson', threshold: float = 0.7):
+        """
+        Khởi tạo cấu hình phân tích tương quan.
+
+        Input:
+            method: Phương pháp tính tương quan ('pearson' hoặc 'spearman').
+            threshold: Ngưỡng xác định tương quan mạnh (mặc định 0.7).
+
+        Output:
+            None.
+        """
         method = method.lower()
         if method not in ['pearson', 'spearman']:
             raise ValueError("Method not support. Please choose 'pearson' or 'spearman'.")
@@ -21,11 +33,17 @@ class CorrelationAnalysis(Visualization):
         self._status = "Initialized"
         return
 
-    # ====================================================================
-    # 1. CÁC HÀM ABSTRACT BẮT BUỘC (Thỏa mãn tính Đa hình của OOP)
-    # ====================================================================
+
     def run(self, obj):
-        """Hàm thực thi chính"""
+        """
+        Thực thi phân tích tương quan trên DataFrame hoặc object Dataset.
+
+        Input:
+            obj: pd.DataFrame hoặc đối tượng có thuộc tính data.
+
+        Output:
+            None.
+        """
         if isinstance(obj, pd.DataFrame):
             self.visitDataFrame(obj)
         else:
@@ -36,16 +54,27 @@ class CorrelationAnalysis(Visualization):
 
     def visitImageDataset(self, obj):
         """
-        [FIX BUGS]: Hàm này BẮT BUỘC phải có mặt để thỏa mãn Abstract Class của lõi Core.
-        Do class này chuyên xử lý Bảng (Tabular) nên ta sẽ bỏ qua (pass) nếu lỡ truyền ảnh vào.
+        Không hỗ trợ dữ liệu hình ảnh.
+
+        Input:
+            obj: Đối tượng ImageDataset.
+
+        Output:
+            None (in cảnh báo).
         """
         print(f"[WARNING] Class {self.__class__.__name__} không hỗ trợ xử lý ImageDataset.")
         return
 
-    # ====================================================================
-    # 2. LOGIC XỬ LÝ CHÍNH
-    # ====================================================================
     def visitDataFrame(self, obj):
+        """
+        Tiền xử lý dữ liệu số, tính ma trận tương quan, vẽ heatmap và tổng hợp thống kê.
+
+        Input:
+            obj: pd.DataFrame hoặc đối tượng có thuộc tính data.
+
+        Output:
+            None (vẽ biểu đồ và in kết quả).
+        """
         try:
             print(f"   [INFO] Đang thực thi {self._step_name}...")
             
@@ -79,6 +108,15 @@ class CorrelationAnalysis(Visualization):
         return
 
     def log(self):
+        """
+        In trạng thái thực thi và danh sách các cặp biến tương quan mạnh/yếu.
+
+        Input:
+            Không có.
+
+        Output:
+            None (in ra màn hình).
+        """
         print(f"\nMethod: {self._method.capitalize()}")
         print(f"Status: {self._status}")
         
@@ -95,7 +133,15 @@ class CorrelationAnalysis(Visualization):
         return
 
     def _extract_high_low_correlation(self):
-        """Hàm nội bộ: Lọc ra các biến có tương quan cao và cực thấp dựa vào ngưỡng T"""
+        """
+        Lọc ra các cặp biến có tương quan cao (>= threshold) và cực yếu (top 5).
+
+        Input:
+            Không có (sử dụng _corr_matrix nội bộ).
+
+        Output:
+            None (cập nhật _stats dict).
+        """
         if self._corr_matrix is None:
             return
 

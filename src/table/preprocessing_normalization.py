@@ -15,6 +15,15 @@ class _BaseTableNormalization(Preprocessing):
 	"""Shared workflow for table normalization services."""
 
 	def __init__(self, step_name: str):
+		"""
+		Khởi tạo base normalization.
+
+		Input:
+			step_name: Tên bước xử lý.
+
+		Output:
+			None.
+		"""
 		self._step_name = step_name
 		self._dataset_path = "Unknown"
 		self._status = "Initialized"
@@ -33,6 +42,15 @@ class _BaseTableNormalization(Preprocessing):
 		return self._transformed
 
 	def _to_dataframe(self, X: Any) -> tuple[pd.DataFrame, bool]:
+		"""
+		Chuyển đổi đầu vào thành DataFrame.
+
+		Input:
+			X: Dữ liệu đầu vào (DataFrame hoặc numpy array 2D).
+
+		Output:
+			Tuple (DataFrame, bool): DataFrame và cờ is_dataframe.
+		"""
 		if isinstance(X, pd.DataFrame):
 			return X.copy(), True
 
@@ -44,9 +62,28 @@ class _BaseTableNormalization(Preprocessing):
 		return pd.DataFrame(X_arr, columns=columns), False
 
 	def _build_scaler(self, n_samples: int):
+		"""
+		Tạo scaler cụ thể (lớp con phải implement).
+
+		Input:
+			n_samples: Số mẫu dữ liệu.
+
+		Output:
+			Scaler object.
+		"""
 		raise NotImplementedError("Subclasses must implement _build_scaler.")
 
 	def fit(self, X, y=None):
+		"""
+		Tính toán tham số chuẩn hóa từ dữ liệu.
+
+		Input:
+			X: Dữ liệu features.
+			y: Không sử dụng.
+
+		Output:
+			self: Trả về chính đối tượng.
+		"""
 		df, _ = self._to_dataframe(X)
 		self._numeric_columns = df.select_dtypes(include=[np.number]).columns.tolist()
 
@@ -58,6 +95,15 @@ class _BaseTableNormalization(Preprocessing):
 		return self
 
 	def transform(self, X):
+		"""
+		Áp dụng chuẩn hóa lên dữ liệu.
+
+		Input:
+			X: Dữ liệu features.
+
+		Output:
+			pd.DataFrame hoặc np.ndarray: Dữ liệu đã chuẩn hóa.
+		"""
 		if self._scaler is None:
 			raise ValueError("Model chưa fit. Hãy gọi fit trước.")
 
@@ -76,14 +122,42 @@ class _BaseTableNormalization(Preprocessing):
 		return self._transformed
 
 	def fit_transform(self, X, y=None):
+		"""
+		Kết hợp fit và transform.
+
+		Input:
+			X: Dữ liệu features.
+			y: Không sử dụng.
+
+		Output:
+			pd.DataFrame hoặc np.ndarray: Dữ liệu đã chuẩn hóa.
+		"""
 		self.fit(X, y)
 		return self.transform(X)
 
 	def visitImageDataset(self, obj):
+		"""
+		Không hỗ trợ dữ liệu hình ảnh.
+
+		Input:
+			obj: Đối tượng ImageDataset.
+
+		Output:
+			None.
+		"""
 		print(f"[WARNING] {self.__class__.__name__} không hỗ trợ ImageDataset.")
 		return
 
 	def visitTableDataset(self, obj):
+		"""
+		Triển khai chuẩn hóa lên đối tượng TableDataset.
+
+		Input:
+			obj: Đối tượng TableDataset.
+
+		Output:
+			None (cập nhật dữ liệu trong obj).
+		"""
 		self._dataset_path = getattr(obj, "_folder_path", "Unknown")
 
 		try:

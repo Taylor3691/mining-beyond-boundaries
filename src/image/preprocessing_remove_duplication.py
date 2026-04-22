@@ -11,10 +11,13 @@ class RemoveDuplication(Preprocessing):
     def __init__(self, indices_to_remove: set, output_dir: str = None):
         """
         Khởi tạo lớp thực hiện loại bỏ ảnh trùng lặp.
-
+        
         Input:
-            indices_to_remove: Tập hợp các chỉ số (index) của ảnh cần loại bỏ.
-            output_dir: Thư mục để di chuyển các file trùng lặp vào (tùy chọn).
+            indices_to_remove: Tập chỉ số ảnh trùng lặp cần loại bỏ khỏi dataset.
+            output_dir: Đường dẫn tệp hoặc thư mục liên quan đến dữ liệu.
+        
+        Output:
+            None.
         """
         if not isinstance(indices_to_remove, set):
             # Ép kiểu an toàn nếu lỡ truyền list
@@ -29,24 +32,50 @@ class RemoveDuplication(Preprocessing):
     def fit(self, X, y=None):
         """
         Hàm fit tương thích với kiến trúc pipeline.
+        
+        Input:
+            X: Dữ liệu đặc trưng hoặc nhãn dùng cho huấn luyện/đánh giá.
+            y: Dữ liệu đặc trưng hoặc nhãn dùng cho huấn luyện/đánh giá.
+        
+        Output:
+            Giá trị trả về của hàm.
         """
         return self
 
     def transform(self, X):
         """
         Hàm biến đổi (không thực hiện gì trong RAM cho X thô).
+        
+        Input:
+            X: Dữ liệu đặc trưng hoặc nhãn dùng cho huấn luyện/đánh giá.
+        
+        Output:
+            Giá trị trả về của hàm.
         """
         return X
 
     def fit_transform(self, X, y=None):
         """
         Thực hiện fit và transform.
+        
+        Input:
+            X: Dữ liệu đặc trưng hoặc nhãn dùng cho huấn luyện/đánh giá.
+            y: Dữ liệu đặc trưng hoặc nhãn dùng cho huấn luyện/đánh giá.
+        
+        Output:
+            Giá trị trả về của hàm.
         """
         return self.transform(X)
 
     def visitImageDataset(self, obj: ImageDataset):
         """
         Cổng kết nối để thực thi trên ImageDataset.
+        
+        Input:
+            obj: Đối tượng dữ liệu đầu vào cần được xử lý.
+        
+        Output:
+            Giá trị trả về của hàm.
         """
         self.run(obj)
         return self
@@ -54,9 +83,12 @@ class RemoveDuplication(Preprocessing):
     def run(self, obj: ImageDataset):
         """
         Thực hiện di chuyển file vật lý và cập nhật lại danh sách của Dataset.
-
+        
         Input:
-            obj: Đối tượng ImageDataset.
+            obj: Đối tượng dữ liệu đầu vào cần được xử lý.
+        
+        Output:
+            None.
         """
         initial_count = len(obj.image_paths)
         if initial_count == 0 or not self._indices_to_remove:
@@ -118,10 +150,13 @@ class RemoveDuplication(Preprocessing):
     def log(self, initial_count, final_count):
         """
         In thông tin tóm tắt về số lượng ảnh đã xóa và trạng thái sau khi xử lý.
-
+        
         Input:
-            initial_count: Số lượng ảnh ban đầu.
-            final_count: Số lượng ảnh sau khi xóa.
+            initial_count: Số lượng mẫu hoặc số lần lặp dùng trong xử lý/đánh giá.
+            final_count: Số lượng mẫu hoặc số lần lặp dùng trong xử lý/đánh giá.
+        
+        Output:
+            None.
         """
         print("\n--- Remove Duplication Preprocessing Log ---")
         print(f"1. Processing Step: Preprocessing - Remove Duplicates")

@@ -7,7 +7,15 @@ from table.dataset import TableDataset
 
 class KolmogorovSmirnovTesting(DistributionTesting):
     def __init__(self, alpha=0.05):
-        """Khởi tạo kiểm định Kolmogorov-Smirnov cho hai mẫu."""
+        """
+        Khởi tạo kiểm định Kolmogorov-Smirnov cho hai mẫu.
+
+        Input:
+            alpha: Mức ý nghĩa thống kê (mặc định 0.05).
+
+        Output:
+            None.
+        """
         self.step_name = "Distribution Consistency Check"
         self.test_name = "Kolmogorov-Smirnov Test"
         self.alpha = alpha
@@ -19,7 +27,15 @@ class KolmogorovSmirnovTesting(DistributionTesting):
         self.is_rejected = False
 
     def visitImageDataset(self, obj: ImageDataset):
-        """Kiểm định phân phối cho dữ liệu hình ảnh."""
+        """
+        Kiểm định phân phối cho dữ liệu hình ảnh.
+
+        Input:
+            obj: Đối tượng ImageDataset chứa _origin_images và _processed_images.
+
+        Output:
+            None (cập nhật statistic, p_value, conclusion).
+        """
         if not hasattr(obj, '_origin_images') or not hasattr(obj, '_processed_images'):
             raise AttributeError("ImageDataset phải có thuộc tính '_origin_images' và '_processed_images'")
 
@@ -33,7 +49,15 @@ class KolmogorovSmirnovTesting(DistributionTesting):
         return
     
     def visitTableDataset(self, obj):
-        """Kiểm định phân phối cho dữ liệu bảng."""
+        """
+        Kiểm định phân phối cho dữ liệu bảng.
+
+        Input:
+            obj: Đối tượng TableDataset chứa _origin_data và data hiện tại.
+
+        Output:
+            None (cập nhật statistic, p_value, conclusion).
+        """
         if not hasattr(obj, '_origin_data') or getattr(obj, '_origin_data') is None:
              raise AttributeError("TableDataset phải có thuộc tính '_origin_data' để thực hiện KS Test. Hãy cập nhật TableDataset.")
         
@@ -50,7 +74,15 @@ class KolmogorovSmirnovTesting(DistributionTesting):
         return
     
     def run(self, obj):
-        """Thực thi kiểm định dựa trên kiểu dữ liệu của đối tượng."""
+        """
+        Thực thi kiểm định dựa trên kiểu dữ liệu của đối tượng.
+
+        Input:
+            obj: Đối tượng ImageDataset hoặc TableDataset.
+
+        Output:
+            None.
+        """
         obj_type = type(obj).__name__
         if obj_type == "ImageDataset":
             self.visitImageDataset(obj)
@@ -61,7 +93,15 @@ class KolmogorovSmirnovTesting(DistributionTesting):
         return
     
     def log(self):
-        """In báo cáo kết quả kiểm định ra màn hình."""
+        """
+        In báo cáo kết quả kiểm định ra màn hình.
+
+        Input:
+            Không có.
+
+        Output:
+            None (in ra màn hình).
+        """
         print(f"Step: {self.step_name}")
         print(f"Kiểm định: {self.test_name}")
         print(f"Giả thuyết H0: {self.h0_hypothesis}")
@@ -78,7 +118,16 @@ class KolmogorovSmirnovTesting(DistributionTesting):
         return
             
     def test(self, data_orig: np.ndarray, data_proc: np.ndarray):
-        """Thực hiện tính toán chỉ số thống kê KS."""
+        """
+        Thực hiện tính toán chỉ số thống kê KS.
+
+        Input:
+            data_orig: Mảng dữ liệu gốc.
+            data_proc: Mảng dữ liệu đã xử lý.
+
+        Output:
+            None (cập nhật statistic, p_value, conclusion).
+        """
         self.statistic, self.p_value = stats.ks_2samp(data_orig, data_proc)
         
         self.is_rejected = self.p_value <= self.alpha

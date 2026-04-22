@@ -10,6 +10,12 @@ class ContrastAndBrightness(Visualization):
     def __init__(self):
         """
         Khởi tạo lớp phân tích độ sáng và độ tương phản của tập dữ liệu ảnh.
+        
+        Input:
+            Không có.
+        
+        Output:
+            None.
         """
         self._dataset : ImageDataset | None = None
         self._df      : pd.DataFrame | None = None
@@ -17,7 +23,15 @@ class ContrastAndBrightness(Visualization):
         self._status  : str = "Not Run"
 
     def run(self):
-        """Thực thi quy trình phân tích và hiển thị kết quả."""
+        """
+        Thực thi quy trình phân tích và hiển thị kết quả.
+        
+        Input:
+            Không có.
+        
+        Output:
+            None.
+        """
         if self._dataset is None:
             self._status = "Failed"
             return
@@ -26,7 +40,15 @@ class ContrastAndBrightness(Visualization):
         self._analyze()
 
     def log(self):
-        """In log kết quả phân tích ra màn hình."""
+        """
+        In log kết quả phân tích ra màn hình.
+        
+        Input:
+            Không có.
+        
+        Output:
+            None.
+        """
         print("=" * 55)
         print("Step    : Analysis Contrast & Brightness")
         print(f"Dataset : {self._dataset._folder_path if self._dataset else 'None'}")
@@ -44,9 +66,12 @@ class ContrastAndBrightness(Visualization):
     def visitImageDataset(self, obj: ImageDataset):
         """
         Duyệt qua ImageDataset, tính toán độ sáng và độ tương phản cho từng ảnh theo batch.
-
+        
         Input:
-            obj: Đối tượng ImageDataset cần phân tích.
+            obj: Đối tượng dữ liệu đầu vào cần được xử lý.
+        
+        Output:
+            None.
         """
         try:
             # Map index sang tên class để hiển thị
@@ -88,12 +113,12 @@ class ContrastAndBrightness(Visualization):
     def _compute_stats(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Tính toán các chỉ số thống kê (mean, var, median, IQR, outliers) cho độ sáng và độ tương phản.
-
+        
         Input:
-            df: DataFrame chứa kết quả tính toán thô của từng ảnh.
-
+            df: Dữ liệu đầu vào dùng cho bước phân tích hoặc biến đổi.
+        
         Output:
-            DataFrame chứa các chỉ số thống kê tổng hợp theo từng lớp.
+            Giá trị trả về của hàm.
         """
         rows = []
         for class_name, grp in df.groupby("class_name"):
@@ -112,7 +137,15 @@ class ContrastAndBrightness(Visualization):
         return pd.DataFrame(rows).set_index("class_name")
 
     def _analyze(self):
-        """Hiển thị nhận xét kết quả dưới dạng Markdown."""
+        """
+        Hiển thị nhận xét kết quả dưới dạng Markdown.
+        
+        Input:
+            Không có.
+        
+        Output:
+            None.
+        """
         s = self._stats
 
         # ── Brightness ──────────────────────────────────────────────────

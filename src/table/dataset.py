@@ -3,7 +3,18 @@ from core import Object, Service
 from utils import file
 
 class TableDataset(Object):
+    """Lớp quản lý dữ liệu dạng bảng (Tabular Dataset)."""
+
     def __init__(self, path: str | None = None):
+        """
+        Khởi tạo tập dữ liệu bảng từ file CSV.
+
+        Input:
+            path: Đường dẫn tới file CSV (None nếu khởi tạo rỗng).
+
+        Output:
+            None.
+        """
         self._folder_path = path # file path 
         self._data = None         
         self._features = None    # Lưu X
@@ -46,16 +57,44 @@ class TableDataset(Object):
 
     # Method
     def load(self):
+        """
+        Nạp dữ liệu từ file CSV vào DataFrame.
+
+        Input:
+            Không có (sử dụng _folder_path đã khởi tạo).
+
+        Output:
+            None (cập nhật nội bộ _data, _shape, _columns).
+        """
         self._data = file.load_table(self._folder_path)
         self._shape = self._data.shape
         self._columns = self._data.columns.tolist()
         return
 
     def save(self, folder_path: str, file_name: str = "processed_data.csv"):
+        """
+        Lưu dữ liệu hiện tại ra file CSV.
+
+        Input:
+            folder_path: Đường dẫn thư mục đích.
+            file_name: Tên file CSV đầu ra (mặc định 'processed_data.csv').
+
+        Output:
+            None (lưu file CSV vào ổ đĩa).
+        """
         file.save_table(path=folder_path, data=self._data, file_name=file_name)
         return
 
     def set_target(self, target_column: str):
+        """
+        Thiết lập biến mục tiêu (target) và tách features.
+
+        Input:
+            target_column: Tên cột làm biến mục tiêu.
+
+        Output:
+            Tuple (features, target): DataFrame features và Series target.
+        """
         if self._data is None:
             raise ValueError("Data is not loaded")
         if target_column not in self._columns:
@@ -67,6 +106,15 @@ class TableDataset(Object):
         return self._features, self._target
 
     def info(self):
+        """
+        In thông tin metadata tổng quan của tập dữ liệu bảng.
+
+        Input:
+            Không có.
+
+        Output:
+            None (in ra màn hình).
+        """
         print("--- Metadata of Table Dataset ---")
         print(f"\tFile Path: {self._folder_path if self._folder_path else 'Empty'}")
         print(f"\tDataset Shape: {self._shape} (Rows, Cols)")
@@ -79,6 +127,15 @@ class TableDataset(Object):
         return
 
     def clone(self):
+        """
+        Tạo bản sao độc lập của tập dữ liệu bảng.
+
+        Input:
+            Không có.
+
+        Output:
+            TableDataset: Đối tượng bản sao với dữ liệu được deep copy.
+        """
         dataset_clone = TableDataset(self._folder_path)
         if self._data is not None:
             dataset_clone.data = self._data.copy()
@@ -87,5 +144,14 @@ class TableDataset(Object):
         return dataset_clone
 
     def accept(self, service: Service):
+        """
+        Chấp nhận một Service (Visitor) để thực thi tác vụ trên dataset.
+
+        Input:
+            service: Đối tượng Service cần thực thi.
+
+        Output:
+            None.
+        """
         service.run(self)
         return

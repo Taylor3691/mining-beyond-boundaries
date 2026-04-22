@@ -18,7 +18,19 @@ from visualization.relationship import plot_dim_reduction_2d
 
 
 class _BaseFeaturePreprocessing(Preprocessing):
+    """Lớp cơ sở cho các phương pháp chọn đặc trưng và giảm chiều."""
+
     def __init__(self, step_name: str, k: int | None = None):
+        """
+        Khởi tạo base feature preprocessing.
+
+        Input:
+            step_name: Tên bước xử lý.
+            k: Số đặc trưng cần chọn.
+
+        Output:
+            None.
+        """
         self._step_name = step_name
         self._k = k
         self._status = "Initialized"
@@ -42,6 +54,15 @@ class _BaseFeaturePreprocessing(Preprocessing):
         return self._X_selected
 
     def _ensure_xy(self, obj: Any) -> tuple[Any, Any]:
+        """
+        Kiểm tra và lấy features/target từ đối tượng dataset.
+
+        Input:
+            obj: Đối tượng dataset.
+
+        Output:
+            Tuple (X, y): Features và target.
+        """
         X = getattr(obj, "features", None)
         y = getattr(obj, "target", None)
 
@@ -52,6 +73,15 @@ class _BaseFeaturePreprocessing(Preprocessing):
         return X, y
 
     def _cap_k(self, n_features: int) -> int:
+        """
+        Giới hạn k không vượt quá số đặc trưng thực tế.
+
+        Input:
+            n_features: Số đặc trưng hiện có.
+
+        Output:
+            int: Giá trị k đã giới hạn.
+        """
         if self._k is None:
             raise ValueError("Thiếu tham số k.")
         if self._k <= 0:
@@ -59,20 +89,56 @@ class _BaseFeaturePreprocessing(Preprocessing):
         return min(self._k, n_features)
 
     def _infer_feature_names(self, X: Any) -> list[str]:
+        """
+        Suy luận tên cột từ DataFrame hoặc tạo tên mặc định.
+
+        Input:
+            X: Dữ liệu features.
+
+        Output:
+            list[str]: Danh sách tên đặc trưng.
+        """
         if isinstance(X, pd.DataFrame):
             return X.columns.astype(str).tolist()
         return [f"feature_{i}" for i in range(np.asarray(X).shape[1])]
 
     def _to_selected_dataframe(self, X: Any) -> pd.DataFrame:
+        """
+        Chuyển kết quả transform thành DataFrame.
+
+        Input:
+            X: Dữ liệu gốc (để lấy index).
+
+        Output:
+            pd.DataFrame: Dữ liệu đã chọn đặc trưng.
+        """
         if self._X_selected is None:
             raise ValueError("Chưa có dữ liệu transform.")
         return pd.DataFrame(self._X_selected, columns=self._selected_feature_names, index=getattr(X, "index", None))
 
     def visitImageDataset(self, obj):
+        """
+        Không hỗ trợ dữ liệu hình ảnh.
+
+        Input:
+            obj: Đối tượng ImageDataset.
+
+        Output:
+            None (in cảnh báo).
+        """
         print(f"[WARNING] {self.__class__.__name__} không hỗ trợ ImageDataset.")
         return
 
     def visitTableDataset(self, obj):
+        """
+        Triển khai chọn đặc trưng trên đối tượng TableDataset.
+
+        Input:
+            obj: Đối tượng TableDataset.
+
+        Output:
+            None (cập nhật dữ liệu trong obj).
+        """
         self._dataset_path = getattr(obj, "_folder_path", "Unknown")
         try:
             X, y = self._ensure_xy(obj)
@@ -98,9 +164,27 @@ class _BaseFeaturePreprocessing(Preprocessing):
             self._error_message = str(e)
 
     def run(self, obj):
+        """
+        Điểm vào thực thi - gọi visitTableDataset.
+
+        Input:
+            obj: Đối tượng TableDataset.
+
+        Output:
+            None.
+        """
         self.visitTableDataset(obj)
 
     def log(self):
+        """
+        In thông tin trạng thái và kết quả chọn đặc trưng.
+
+        Input:
+            Không có.
+
+        Output:
+            None (in ra màn hình).
+        """
         print("\n" + "=" * 55)
         print(f"Step      : {self._step_name}")
         print(f"Dataset   : {self._dataset_path}")
@@ -114,7 +198,20 @@ class _BaseFeaturePreprocessing(Preprocessing):
 
 
 class StatisticalFiltering(_BaseFeaturePreprocessing):
+    """Lọc đặc trưng bằng kiểm định thống kê (ANOVA, Chi-Square, Mutual Info)."""
+
     def __init__(self, k: int, score_func, method_name: str):
+        """
+        Khởi tạo bộ lọc thống kê.
+
+        Input:
+            k: Số đặc trưng cần chọn.
+            score_func: Hàm tính điểm (f_classif, chi2, ...).
+            method_name: Tên phương pháp.
+
+        Output:
+            None.
+        """
         super().__init__(step_name=f"Statistical Filtering ({method_name})", k=k)
         self._score_func = score_func
         self._method_name = method_name
@@ -129,6 +226,16 @@ class StatisticalFiltering(_BaseFeaturePreprocessing):
         return np.asarray(X)
 
     def fit(self, X, y):
+        """
+        Tính điểm và chọn k đặc trưng tốt nhất.
+
+        Input:
+            X: Dữ liệu features.
+            y: Biến mục tiêu.
+
+        Output:
+            None.
+        """
         X_arr = self._prepare_X(X)
         k = self._cap_k(X_arr.shape[1])
         self._selector = SelectKBest(score_func=self._score_func, k=k)
@@ -139,6 +246,15 @@ class StatisticalFiltering(_BaseFeaturePreprocessing):
         self._scores = self._selector.scores_
 
     def transform(self, X):
+        """
+        Áp dụng lọc đặc trưng đã fit.
+
+        Input:
+            X: Dữ liệu features.
+
+        Output:
+            np.ndarray: Dữ liệu với các đặc trưng đã chọn.
+        """
         if self._selector is None:
             raise ValueError("Model chưa fit. Hãy gọi fit trước.")
         X_arr = self._prepare_X(X)
@@ -146,6 +262,16 @@ class StatisticalFiltering(_BaseFeaturePreprocessing):
         return self._X_selected
 
     def fit_transform(self, X, y):
+        """
+        Kết hợp fit và transform.
+
+        Input:
+            X: Dữ liệu features.
+            y: Biến mục tiêu.
+
+        Output:
+            np.ndarray: Dữ liệu đã lọc đặc trưng.
+        """
         self.fit(X, y)
         return self.transform(X)
 

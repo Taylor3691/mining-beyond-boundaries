@@ -15,12 +15,30 @@ from config.settings import DEFAULT_SIZE
 
 class FeatureSpaceAnalysis(Visualization):
     def __init__(self, n_samples: int = 2000):
+        """
+        Khởi tạo đối tượng và thiết lập giá trị ban đầu.
+        
+        Input:
+            n_samples: Số lượng mẫu hoặc số lần lặp dùng trong xử lý/đánh giá.
+        
+        Output:
+            None.
+        """
         self._step_name = "Analysis: PCA & t-SNE Feature Space"
         self._dataset_name = ""
         self._status = "Initialized"
         self.n_samples = n_samples
         
     def visitImageDataset(self, obj: ImageDataset):
+        """
+        Thực thi xử lý dữ liệu theo kiểu đối tượng đầu vào.
+        
+        Input:
+            obj: Đối tượng dữ liệu đầu vào cần được xử lý.
+        
+        Output:
+            None.
+        """
         self._dataset_name = "Image Dataset"
         print(f"[INFO] Bắt đầu nạp {self.n_samples} ảnh (lấy mẫu đều 10 class) vào RAM...")
         
@@ -114,8 +132,26 @@ class FeatureSpaceAnalysis(Visualization):
         self.log()
 
     def run(self, obj: ImageDataset):
+        """
+        Thực thi quy trình xử lý chính của hàm.
+        
+        Input:
+            obj: Đối tượng dữ liệu đầu vào cần được xử lý.
+        
+        Output:
+            None.
+        """
         if isinstance(obj, ImageDataset):
             self.visitImageDataset(obj)
             
     def log(self):
+        """
+        Ghi nhận và in thông tin trạng thái thực thi.
+        
+        Input:
+            Không có.
+        
+        Output:
+            None.
+        """
         print(f"[STATUS] {self._step_name} - {self._status}")

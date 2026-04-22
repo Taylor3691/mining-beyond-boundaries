@@ -116,13 +116,13 @@ COMBO_3_PIPELINES = [
 def _apply_pipeline(image, fn_list):
     """
     Áp dụng một chuỗi các hàm biến đổi ảnh lên một ảnh duy nhất.
-
+    
     Input:
-        image: Ma trận ảnh đầu vào.
-        fn_list: Danh sách các hàm biến đổi (lambda hoặc function).
-
+        image: Ảnh đầu vào dạng mảng NumPy.
+        fn_list: Danh sách hàm biến đổi sẽ được áp dụng tuần tự lên ảnh.
+    
     Output:
-        Ảnh sau khi xử lý.
+        Giá trị trả về của hàm.
     """
     result = image.copy()
     for fn in fn_list:
@@ -133,10 +133,13 @@ class AugmentationExperiment(Visualization):
     def __init__(self, target_size=(64, 64), num_eval_runs=2):
         """
         Khởi tạo lớp thực hiện các thí nghiệm tăng cường dữ liệu.
-
+        
         Input:
-            target_size: Kích thước ảnh mục tiêu để nạp vào mô hình.
-            num_eval_runs: Số lần lặp lại đánh giá để lấy trung bình.
+            target_size: Kích thước hoặc hình dạng mục tiêu trong quá trình xử lý.
+            num_eval_runs: Số lượng mẫu hoặc số lần lặp dùng trong xử lý/đánh giá.
+        
+        Output:
+            None.
         """
         self.step_name     = "Data Augmentation Experiment"
         self.dataset_name  = "Unknown"
@@ -160,9 +163,12 @@ class AugmentationExperiment(Visualization):
     def run(self, obj: Object):
         """
         Thực thi quy trình thí nghiệm tăng cường dữ liệu.
-
+        
         Input:
-            obj: Đối tượng dữ liệu cần thực thi (ImageDataset).
+            obj: Đối tượng dữ liệu đầu vào cần được xử lý.
+        
+        Output:
+            None.
         """
         if isinstance(obj, ImageDataset):
             self.visitImageDataset(obj)
@@ -173,9 +179,12 @@ class AugmentationExperiment(Visualization):
     def visitImageDataset(self, obj: ImageDataset):
         """
         Thực hiện các bước thí nghiệm cụ thể trên tập dữ liệu ảnh.
-
+        
         Input:
-            obj: Đối tượng ImageDataset.
+            obj: Đối tượng dữ liệu đầu vào cần được xử lý.
+        
+        Output:
+            None.
         """
         self.dataset_name = obj.folder_path or "ImageDataset"
         try:
@@ -191,7 +200,15 @@ class AugmentationExperiment(Visualization):
             self.log()
 
     def log(self):
-        """In kết quả tổng hợp sau thí nghiệm."""
+        """
+        In kết quả tổng hợp sau thí nghiệm.
+        
+        Input:
+            Không có.
+        
+        Output:
+            None.
+        """
         print(f"\n{'='*55}")
         print(f"  Buoc xu ly   : {self.step_name}")
         print(f"  Tap du lieu  : {self.dataset_name}")
@@ -213,13 +230,16 @@ class AugmentationExperiment(Visualization):
     def _save_augmented_images(self, tn_group, method_name, aug_imgs, aug_labels, aug_paths):
         """
         Lưu các ảnh đã được tăng cường vào thư mục cục bộ để kiểm tra.
-
+        
         Input:
-            tn_group: Tên nhóm thí nghiệm (tn_1, tn_2, tn_3).
-            method_name: Tên phương pháp tăng cường.
-            aug_imgs: Danh sách ảnh đã biến đổi.
-            aug_labels: Danh sách nhãn tương ứng.
-            aug_paths: Danh sách đường dẫn gốc tương ứng.
+            tn_group: Tên nhóm thí nghiệm dùng để tạo thư mục lưu kết quả.
+            method_name: Phương pháp hoặc chế độ xử lý được sử dụng.
+            aug_imgs: Danh sách ảnh đã được tăng cường.
+            aug_labels: Nhãn tương ứng với dữ liệu đầu vào.
+            aug_paths: Đường dẫn tệp hoặc thư mục liên quan đến dữ liệu.
+        
+        Output:
+            None.
         """
         safe_method_name = method_name.replace("/", "-").replace(" ", "_").replace(":", "")
         base_dir = os.path.join(PATH_FOLDER_RAW, "preprocessing", tn_group, safe_method_name)
@@ -244,9 +264,12 @@ class AugmentationExperiment(Visualization):
     def _load_data(self, obj: ImageDataset):
         """
         Nạp toàn bộ dữ liệu từ ImageDataset vào bộ nhớ, có hỗ trợ resize.
-
+        
         Input:
-            obj: Đối tượng ImageDataset.
+            obj: Đối tượng dữ liệu đầu vào cần được xử lý.
+        
+        Output:
+            None.
         """
         images_temp = []
         labels_temp = []
@@ -274,6 +297,12 @@ class AugmentationExperiment(Visualization):
     def _split_data(self):
         """
         Phân chia dữ liệu nạp được thành tập Train và Test (80/20).
+        
+        Input:
+            Không có.
+        
+        Output:
+            None.
         """
         indices = np.arange(len(self.all_images))
         self.train_idx, self.test_idx = train_test_split(
@@ -285,13 +314,15 @@ class AugmentationExperiment(Visualization):
     def evaluation(self, X_train, y_train, X_test, y_test):
         """
         Huấn luyện mô hình Logistic Regression và tính toán các chỉ số đánh giá.
-
+        
         Input:
-            X_train, y_train: Dữ liệu và nhãn tập huấn luyện.
-            X_test, y_test: Dữ liệu và nhãn tập kiểm tra.
-
+            X_train: Dữ liệu đặc trưng hoặc nhãn dùng cho huấn luyện/đánh giá.
+            y_train: Dữ liệu đặc trưng hoặc nhãn dùng cho huấn luyện/đánh giá.
+            X_test: Dữ liệu đặc trưng hoặc nhãn dùng cho huấn luyện/đánh giá.
+            y_test: Dữ liệu đặc trưng hoặc nhãn dùng cho huấn luyện/đánh giá.
+        
         Output:
-            Từ điển chứa Accuracy, Precision, Recall, F1-score và thời gian huấn luyện.
+            Giá trị trả về của hàm.
         """
         acc_list, prec_list, rec_list, f1_list, time_list = [], [], [], [], []
         for i in range(self.num_eval_runs):
@@ -326,12 +357,12 @@ class AugmentationExperiment(Visualization):
     def _evaluate_pipeline_balance(self, pipeline_fn):
         """
         Thực hiện tăng cường dữ liệu để cân bằng các lớp và đánh giá hiệu quả.
-
+        
         Input:
-            pipeline_fn: Hàm thực hiện chuỗi biến đổi.
-
+            pipeline_fn: Hàm pipeline dùng để biến đổi một ảnh đầu vào.
+        
         Output:
-            Bao gồm ảnh tổng hợp, nhãn, đường dẫn, dữ liệu cho t-SNE và kết quả metrics.
+            Giá trị trả về của hàm.
         """
         import random
         from collections import Counter
@@ -388,6 +419,12 @@ class AugmentationExperiment(Visualization):
     def _evaluate_all(self):
         """
         Thực hiện tất cả các thí nghiệm (Baseline, TN1, TN2, TN3).
+        
+        Input:
+            Không có.
+        
+        Output:
+            None.
         """
         results = []
         
@@ -428,6 +465,16 @@ class AugmentationExperiment(Visualization):
         self.results_exp2 = []
         for name, pipeline in COMBO_3_PIPELINES:
             def p_fn(img, p_list=pipeline):
+                """
+                Thực thi xử lý trong hàm p_fn.
+                
+                Input:
+                    img: Ảnh đầu vào dạng mảng NumPy.
+                    p_list: Danh sách phép biến đổi thuộc một pipeline.
+                
+                Output:
+                    Giá trị trả về của hàm.
+                """
                 return _apply_pipeline(img, p_list)
                 
             sym_imgs, sym_lbls, sym_paths, tsne_imgs, tsne_lbls, m = self._evaluate_pipeline_balance(p_fn)
@@ -457,12 +504,12 @@ class AugmentationExperiment(Visualization):
     def resize_for_tsne(self, images):
         """
         Đảm bảo các ảnh đưa vào t-SNE có cùng kích thước mục tiêu.
-
+        
         Input:
-            images: Danh sách các ảnh.
-
+            images: Danh sách hoặc mảng các ảnh đầu vào.
+        
         Output:
-            Danh sách ảnh đã được resize.
+            Giá trị trả về của hàm.
         """
         results = []
         for img in images:

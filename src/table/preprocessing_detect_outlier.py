@@ -31,6 +31,15 @@ class BaseOutlierDetector(Preprocessing):
     Class trung gian xử lý boilerplate code cho việc phát hiện và loại bỏ ngoại lai.
     """
     def __init__(self, step_name: str):
+        """
+        Khởi tạo BaseOutlierDetector với cấu hình mặc định.
+
+        Input:
+            step_name: Tên bước xử lý (để log và nhận diện).
+
+        Output:
+            None.
+        """
         self._step_name = step_name
         self._dataset_path = "Unknown"
         self._status = "Pending"
@@ -49,16 +58,41 @@ class BaseOutlierDetector(Preprocessing):
         return self._outlier_indices
 
     def fit(self, df: pd.DataFrame):
+        """
+        Kiểm tra và lưu số lượng mẫu ban đầu.
+
+        Input:
+            df: DataFrame chứa dữ liệu cần phân tích.
+
+        Output:
+            None.
+        """
         if df is None or df.empty:
             raise ValueError("Dữ liệu trống, không thể fit.")
         self._metadata["original_count"] = len(df)
 
     def _get_outlier_mask(self, numeric_df: pd.DataFrame) -> pd.Series:
-        """Hàm abstract ảo để các class con implement logic tìm ngoại lai"""
+        """
+        Tìm các dòng ngoại lai (abstract method - lớp con phải implement).
+
+        Input:
+            numeric_df: DataFrame chỉ chứa các cột số.
+
+        Output:
+            pd.Series (boolean): True nếu dòng là ngoại lai.
+        """
         raise NotImplementedError("Phải implement hàm _get_outlier_mask ở class con")
 
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Hàm tìm, lưu index và loại bỏ các phần tử ngoại lai"""
+        """
+        Tìm, lưu index và loại bỏ các dòng ngoại lai khỏi DataFrame.
+
+        Input:
+            df: DataFrame gốc cần loại ngoại lai.
+
+        Output:
+            pd.DataFrame: Dữ liệu đã loại bỏ các dòng ngoại lai.
+        """
         # Chỉ áp dụng phát hiện ngoại lai trên các cột dữ liệu số
         numeric_df = df.select_dtypes(include=[np.number])
         
@@ -79,15 +113,40 @@ class BaseOutlierDetector(Preprocessing):
         return df.drop(index=self._outlier_indices)
 
     def fit_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Kết hợp fit và transform trong một bước.
+
+        Input:
+            df: DataFrame gốc cần xử lý.
+
+        Output:
+            pd.DataFrame: Dữ liệu đã loại bỏ ngoại lai.
+        """
         self.fit(df)
         return self.transform(df)
     
     def visitImageDataset(self, obj):
-        """Hàm này bắt buộc phải có do kế thừa từ Service, nhưng không dùng cho Table"""
+        """
+        Không hỗ trợ dữ liệu hình ảnh (bắt buộc do kế thừa từ Service).
+
+        Input:
+            obj: Đối tượng ImageDataset.
+
+        Output:
+            None.
+        """
         pass
 
     def visitTableDataset(self, obj):
-        """Triển khai pipeline lên TableDataset"""
+        """
+        Triển khai pipeline phát hiện ngoại lai lên đối tượng TableDataset.
+
+        Input:
+            obj: Đối tượng TableDataset chứa dữ liệu cần xử lý.
+
+        Output:
+            None (cập nhật trực tiếp dữ liệu trong obj).
+        """
         self._dataset_path = getattr(obj, '_folder_path', "Unknown Path")
         
         try:
@@ -108,10 +167,27 @@ class BaseOutlierDetector(Preprocessing):
             self._error_message = str(e)
 
     def run(self, obj):
+        """
+        Điểm vào thực thi - gọi visitTableDataset.
+
+        Input:
+            obj: Đối tượng TableDataset.
+
+        Output:
+            None.
+        """
         self.visitTableDataset(obj)
 
     def log(self):
-        """In ra thông tin tổng quan và tỉ lệ phát hiện"""
+        """
+        In thông tin tổng quan và tỉ lệ phát hiện ngoại lai.
+
+        Input:
+            Không có.
+
+        Output:
+            None (in ra màn hình).
+        """
         print("\n" + "="*50)
         print(f"1. Processing Step : {self._step_name}")
         print(f"2. Target Dataset  : {self._dataset_path}")
@@ -134,6 +210,15 @@ class IQR_Outlier(BaseOutlierDetector):
         self.multiplier = multiplier
 
     def _get_outlier_mask(self, numeric_df: pd.DataFrame) -> pd.Series:
+        """
+        Phát hiện ngoại lai bằng phương pháp IQR.
+
+        Input:
+            numeric_df: DataFrame chỉ chứa các cột số.
+
+        Output:
+            pd.Series (boolean): True nếu dòng vi phạm ngưỡng IQR.
+        """
         Q1 = numeric_df.quantile(0.25)
         Q3 = numeric_df.quantile(0.75)
         IQR = Q3 - Q1
@@ -144,11 +229,31 @@ class IQR_Outlier(BaseOutlierDetector):
 
 # Z-Score
 class ZScore_Outlier(BaseOutlierDetector):
+    """Phát hiện ngoại lai bằng phương pháp Z-Score."""
+
     def __init__(self, threshold: float = 3.0):
+        """
+        Khởi tạo bộ phát hiện ngoại lai Z-Score.
+
+        Input:
+            threshold: Ngưỡng z-score (mặc định 3.0).
+
+        Output:
+            None.
+        """
         super().__init__(step_name=f"Z-Score Outlier Detection (threshold={threshold})")
         self.threshold = threshold
 
     def _get_outlier_mask(self, numeric_df: pd.DataFrame) -> pd.Series:
+        """
+        Phát hiện ngoại lai bằng z-score.
+
+        Input:
+            numeric_df: DataFrame chỉ chứa các cột số.
+
+        Output:
+            pd.Series (boolean): True nếu dòng có z-score vượt ngưỡng.
+        """
         # Tính z-score, bỏ qua NaN
         z_scores = np.abs(stats.zscore(numeric_df, nan_policy='omit'))
         
@@ -158,7 +263,18 @@ class ZScore_Outlier(BaseOutlierDetector):
 
 # Isolation Forest
 class IForest_Outlier(BaseOutlierDetector):
+    """Phát hiện ngoại lai bằng Isolation Forest."""
+
     def __init__(self, contamination: float = 0.05):
+        """
+        Khởi tạo bộ phát hiện ngoại lai Isolation Forest.
+
+        Input:
+            contamination: Tỉ lệ ngoại lai ước tính (0.01, 0.05, 0.1).
+
+        Output:
+            None.
+        """
         if contamination not in [0.01, 0.05, 0.1]:
             print(f"Cảnh báo: Contamination {contamination} không nằm trong yêu cầu {{0.01, 0.05, 0.1}}")
             
@@ -166,6 +282,15 @@ class IForest_Outlier(BaseOutlierDetector):
         self.contamination = contamination
 
     def _get_outlier_mask(self, numeric_df: pd.DataFrame) -> pd.Series:
+        """
+        Phát hiện ngoại lai bằng mô hình Isolation Forest.
+
+        Input:
+            numeric_df: DataFrame chỉ chứa các cột số.
+
+        Output:
+            pd.Series (boolean): True nếu dòng được đánh giá là ngoại lai (-1).
+        """
         model = IsolationForest(contamination=self.contamination, random_state=42)
         preds = model.fit_predict(numeric_df)
         
@@ -174,7 +299,18 @@ class IForest_Outlier(BaseOutlierDetector):
 
 # Local Outlier Factor (LOF)
 class LOF_Outlier(BaseOutlierDetector):
+    """Phát hiện ngoại lai bằng Local Outlier Factor (LOF)."""
+
     def __init__(self, n_neighbors: int = 20):
+        """
+        Khởi tạo bộ phát hiện ngoại lai LOF.
+
+        Input:
+            n_neighbors: Số láng giềng (10, 20, 50).
+
+        Output:
+            None.
+        """
         if n_neighbors not in [10, 20, 50]:
             print(f"Cảnh báo: n_neighbors {n_neighbors} không nằm trong yêu cầu {{10, 20, 50}}")
             
@@ -182,6 +318,15 @@ class LOF_Outlier(BaseOutlierDetector):
         self.n_neighbors = n_neighbors
 
     def _get_outlier_mask(self, numeric_df: pd.DataFrame) -> pd.Series:
+        """
+        Phát hiện ngoại lai bằng mô hình LOF.
+
+        Input:
+            numeric_df: DataFrame chỉ chứa các cột số.
+
+        Output:
+            pd.Series (boolean): True nếu dòng được đánh giá là ngoại lai (-1).
+        """
         model = LocalOutlierFactor(n_neighbors=self.n_neighbors)
         preds = model.fit_predict(numeric_df)
         
@@ -190,14 +335,35 @@ class LOF_Outlier(BaseOutlierDetector):
     
 # DBSCAN
 class DBSCAN_Outlier(BaseOutlierDetector):
+    """Phát hiện ngoại lai bằng DBSCAN với sub-sampling."""
+
     def __init__(self, eps: float = 1.5, min_samples: int = 10, sample_size: int = 40000):
-        # Log ra thông số để dễ theo dõi
+        """
+        Khởi tạo bộ phát hiện ngoại lai DBSCAN.
+
+        Input:
+            eps: Bán kính láng giềng DBSCAN.
+            min_samples: Số mẫu tối thiểu để tạo core point.
+            sample_size: Kích thước mẫu con để tối ưu bộ nhớ.
+
+        Output:
+            None.
+        """
         super().__init__(step_name=f"DBSCAN (eps={eps}, min_samples={min_samples}, Sub-sample={sample_size})")
         self.eps = eps
         self.min_samples = min_samples
         self.sample_size = sample_size
 
     def _get_outlier_mask(self, numeric_df: pd.DataFrame) -> pd.Series:
+        """
+        Phát hiện ngoại lai bằng DBSCAN với sub-sampling và Nearest Neighbors.
+
+        Input:
+            numeric_df: DataFrame chỉ chứa các cột số.
+
+        Output:
+            pd.Series (boolean): True nếu dòng nằm ngoài các cụm DBSCAN.
+        """
         # Chuẩn hoá dữ liệu trước tiên
         numeric_df_32 = numeric_df.astype(np.float32)
         scaler = StandardScaler()
@@ -246,8 +412,16 @@ class DBSCAN_Outlier(BaseOutlierDetector):
 
         return pd.Series(outlier_mask, index=numeric_df.index)
     
-# Ham main dung de test
 def main():
+    """
+    Hàm chính test pipeline phát hiện ngoại lai với nhiều phương pháp và đánh giá Jaccard.
+
+    Input:
+        Không có.
+
+    Output:
+        None (in kết quả ra màn hình).
+    """
     CSV_PATH = str(Path(settings.PATH_FOLDER_TABLE_RAW) / "Building_Permits.csv")
     
     print("="*70)

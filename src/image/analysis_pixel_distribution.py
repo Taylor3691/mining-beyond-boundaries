@@ -11,6 +11,12 @@ class Distribution(Visualization):
     def __init__(self):
         """
         Khởi tạo lớp phân tích cơ bản.
+        
+        Input:
+            Không có.
+        
+        Output:
+            None.
         """
         self.step_name = "Base Analysis"
         self.dataset_name = "Unknown"
@@ -19,6 +25,12 @@ class Distribution(Visualization):
     def log(self):
         """
         In thông tin trạng thái hiện tại của quá trình phân tích.
+        
+        Input:
+            Không có.
+        
+        Output:
+            None.
         """
         print(f"Bước xử lý : {self.step_name}")
         print(f"Tập dữ liệu: {self.dataset_name}")
@@ -28,14 +40,14 @@ class Distribution(Visualization):
     def _extract_pixels(self, obj: ImageDataset, max_samples=200000, target_size=(64, 64)):
         """
         Trích xuất dữ liệu pixel từ tập dữ liệu ảnh sau khi resize.
-
+        
         Input:
-            obj: Đối tượng ImageDataset chứa danh sách đường dẫn ảnh.
-            max_samples: Số lượng pixel tối đa lấy ra để phân tích (mặc định 200,000).
-            target_size: Kích thước ảnh sau khi resize (mặc định 64x64).
-
+            obj: Đối tượng dữ liệu đầu vào cần được xử lý.
+            max_samples: Số lượng pixel tối đa được lấy mẫu để phân tích.
+            target_size: Kích thước hoặc hình dạng mục tiêu trong quá trình xử lý.
+        
         Output:
-            Mảng numpy chứa dữ liệu pixel (số lượng mẫu, 3 kênh màu).
+            Giá trị trả về của hàm.
         """
         print(f"[PROCESS] Đang trích xuất pixel theo Batch (Resize về {target_size})...")
         pixels_list = []
@@ -76,6 +88,12 @@ class HistogramDistribution(Distribution):
     def __init__(self):
         """
         Khởi tạo lớp phân tích phân phối thông qua biểu đồ Histogram.
+        
+        Input:
+            Không có.
+        
+        Output:
+            None.
         """
         super().__init__()
         self.step_name = "Histogram Distribution"
@@ -83,9 +101,12 @@ class HistogramDistribution(Distribution):
     def run(self, obj: Object):
         """
         Thực thi quá trình phân tích Histogram cho đối tượng dữ liệu.
-
+        
         Input:
-            obj: Đối tượng cần phân tích (thường là ImageDataset).
+            obj: Đối tượng dữ liệu đầu vào cần được xử lý.
+        
+        Output:
+            None.
         """
         if isinstance(obj, ImageDataset):
             self.visitImageDataset(obj)
@@ -96,9 +117,12 @@ class HistogramDistribution(Distribution):
     def visitImageDataset(self, obj: ImageDataset):
         """
         Xử lý cụ thể cho tập dữ liệu ImageDataset để vẽ Histogram.
-
+        
         Input:
-            obj: Đối tượng ImageDataset cụ thể.
+            obj: Đối tượng dữ liệu đầu vào cần được xử lý.
+        
+        Output:
+            None.
         """
         self.dataset_name = obj.folder_path or "ImageDataset"
         try:
@@ -116,6 +140,12 @@ class KDEDistribution(Distribution):
     def __init__(self):
         """
         Khởi tạo lớp phân tích phân phối thông qua biểu đồ mật độ KDE.
+        
+        Input:
+            Không có.
+        
+        Output:
+            None.
         """
         super().__init__()
         self.step_name = "KDE Distribution"
@@ -123,9 +153,12 @@ class KDEDistribution(Distribution):
     def run(self, obj: Object):
         """
         Thực thi quá trình phân tích KDE cho đối tượng dữ liệu.
-
+        
         Input:
-            obj: Đối tượng cần phân tích.
+            obj: Đối tượng dữ liệu đầu vào cần được xử lý.
+        
+        Output:
+            None.
         """
         if isinstance(obj, ImageDataset):
             self.visitImageDataset(obj)
@@ -136,9 +169,12 @@ class KDEDistribution(Distribution):
     def visitImageDataset(self, obj: ImageDataset):
         """
         Xử lý cụ thể cho tập dữ liệu ImageDataset để vẽ KDE.
-
+        
         Input:
-            obj: Đối tượng ImageDataset cụ thể.
+            obj: Đối tượng dữ liệu đầu vào cần được xử lý.
+        
+        Output:
+            None.
         """
         self.dataset_name = obj.folder_path or "ImageDataset"
         try:
@@ -160,9 +196,12 @@ class PixelDataExtractor(Distribution):
     def __init__(self, target_size=(64, 64)):
         """
         Khởi tạo lớp trích xuất dữ liệu pixel.
-
+        
         Input:
-            target_size: Kích thước ảnh để resize trước khi trích xuất.
+            target_size: Kích thước hoặc hình dạng mục tiêu trong quá trình xử lý.
+        
+        Output:
+            None.
         """
         super().__init__()
         self.step_name = "Pixel Data Extraction"
@@ -174,12 +213,12 @@ class PixelDataExtractor(Distribution):
     def visitImageDataset(self, obj: ImageDataset):
         """
         Thực hiện quét batch và trích xuất dữ liệu pixel, nhãn từ dataset.
-
+        
         Input:
-            obj: Đối tượng ImageDataset.
-
+            obj: Đối tượng dữ liệu đầu vào cần được xử lý.
+        
         Output:
-            Trả về chính đối tượng PixelDataExtractor sau khi đã nạp dữ liệu.
+            Giá trị trả về của hàm.
         """
         self.dataset_name = obj.folder_path or "ImageDataset"
         print(f"[PROCESS] Đang trích xuất dữ liệu pixel theo Batch (Resize {self.target_size})...")
@@ -222,9 +261,12 @@ class PixelDataExtractor(Distribution):
     def run(self, obj: Object):
         """
         Chạy quy trình trích xuất dữ liệu.
-
+        
         Input:
-            obj: Đối tượng cần trích xuất.
+            obj: Đối tượng dữ liệu đầu vào cần được xử lý.
+        
+        Output:
+            None.
         """
         if isinstance(obj, ImageDataset):
             self.visitImageDataset(obj)

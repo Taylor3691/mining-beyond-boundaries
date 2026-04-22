@@ -22,6 +22,15 @@ class DecompositionAnalysis:
         self.observed = self._series
 
     def run(self):
+        """
+        Thực hiện phân rã chuỗi thời gian (lớp con phải override).
+
+        Input:
+            Không có.
+
+        Output:
+            None (cập nhật trend, seasonal, resid nội bộ).
+        """
         pass
 
     def residual_variance_ratio(self) -> float:
@@ -37,7 +46,15 @@ class DecompositionAnalysis:
         return float(var_resid / var_obs)
 
     def plot(self, title="Time Series Decomposition"):
-        """Hàm trực quan hóa cơ bản"""
+        """
+        Vẽ biểu đồ 4 thành phần: Observed, Trend, Seasonal, Residual.
+
+        Input:
+            title: Tiêu đề biểu đồ.
+
+        Output:
+            None (hiển thị biểu đồ matplotlib).
+        """
         if self.trend is None:
             print("Chưa có dữ liệu để vẽ.")
             return
@@ -69,23 +86,70 @@ class AdditiveDecomposition(DecompositionAnalysis):
         self._model_type = 'additive'
 
     def run(self):
+        """
+        Thực hiện phân rã chuỗi thời gian theo mô hình cộng (Additive).
+
+        Input:
+            Không có.
+
+        Output:
+            None (cập nhật trend, seasonal, resid).
+        """
         result = seasonal_decompose(self.observed, model='additive', period=self._period)
         self.trend = result.trend
         self.seasonal = result.seasonal
         self.resid = result.resid
 
     def detrended(self):
+        """
+        Tính chuỗi đã loại bỏ xu hướng (detrended).
+
+        Input:
+            Không có.
+
+        Output:
+            pd.Series: Chuỗi observed trừ trend.
+        """
         return self.observed - self.trend
 
     def deseasonalized(self):
+        """
+        Tính chuỗi đã loại bỏ mùa vụ (deseasonalized).
+
+        Input:
+            Không có.
+
+        Output:
+            pd.Series: Chuỗi observed trừ seasonal.
+        """
         return self.observed - self.seasonal
 
     def residual(self):
+        """
+        Tính phần dư (residual) của phân rã cộng.
+
+        Input:
+            Không có.
+
+        Output:
+            pd.Series: Observed - Trend - Seasonal.
+        """
         return self.observed - self.trend - self.seasonal
 
 
 class MultiplicativeDecomposition(DecompositionAnalysis):
+    """Phân rã chuỗi thời gian theo mô hình nhân (Multiplicative Model)."""
+
     def run(self):
+        """
+        Thực hiện phân rã theo mô hình nhân với Add-1 Smoothing.
+
+        Input:
+            Không có.
+
+        Output:
+            None (cập nhật trend, seasonal, resid).
+        """
         # Kỹ thuật Add-1 Smoothing để triệt tiêu số 0
         safe_series = self.observed + 1.0 
         result = seasonal_decompose(safe_series, model='multiplicative', period=self._period)
@@ -94,12 +158,39 @@ class MultiplicativeDecomposition(DecompositionAnalysis):
         self.resid = result.resid
 
     def detrended(self):
+        """
+        Tính chuỗi đã loại bỏ xu hướng (chia cho trend).
+
+        Input:
+            Không có.
+
+        Output:
+            pd.Series: (Observed + 1) / Trend.
+        """
         return (self.observed + 1.0) / self.trend
 
     def deseasonalized(self):
+        """
+        Tính chuỗi đã loại bỏ mùa vụ (chia cho seasonal).
+
+        Input:
+            Không có.
+
+        Output:
+            pd.Series: (Observed + 1) / Seasonal.
+        """
         return (self.observed + 1.0) / self.seasonal
 
     def residual(self):
+        """
+        Tính phần dư của phân rã nhân.
+
+        Input:
+            Không có.
+
+        Output:
+            pd.Series: (Observed + 1) / (Trend * Seasonal).
+        """
         return (self.observed + 1.0) / (self.trend * self.seasonal)
 
     def residual_variance_ratio(self) -> float:
@@ -127,11 +218,28 @@ class STLDecomposition(DecompositionAnalysis):
         self._model_type = 'additive' # STL bản chất là Additive
 
     def set_period(self, new_period: int):
-        """Đổi tham số period để thử nghiệm nhanh"""
+        """
+        Đổi tham số period và chạy lại phân rã.
+
+        Input:
+            new_period: Chu kỳ mùa vụ mới.
+
+        Output:
+            None.
+        """
         self._period = new_period
         self.run() # Chạy lại phân rã ngay lập tức
 
     def run(self):
+        """
+        Thực hiện phân rã STL robust.
+
+        Input:
+            Không có.
+
+        Output:
+            None (cập nhật trend, seasonal, resid).
+        """
         stl = STL(self.observed, period=self._period, robust=True)
         result = stl.fit()
         self.trend = result.trend
@@ -139,10 +247,37 @@ class STLDecomposition(DecompositionAnalysis):
         self.resid = result.resid
 
     def detrended(self):
+        """
+        Tính chuỗi đã loại bỏ xu hướng.
+
+        Input:
+            Không có.
+
+        Output:
+            pd.Series: Observed - Trend.
+        """
         return self.observed - self.trend
 
     def deseasonalized(self):
+        """
+        Tính chuỗi đã loại bỏ mùa vụ.
+
+        Input:
+            Không có.
+
+        Output:
+            pd.Series: Observed - Seasonal.
+        """
         return self.observed - self.seasonal
 
     def residual(self):
+        """
+        Tính phần dư của phân rã STL.
+
+        Input:
+            Không có.
+
+        Output:
+            pd.Series: Observed - Trend - Seasonal.
+        """
         return self.observed - self.trend - self.seasonal

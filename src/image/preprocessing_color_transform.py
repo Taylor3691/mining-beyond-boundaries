@@ -16,10 +16,13 @@ class ColorTransform(Preprocessing):
     def __init__(self, method: str = None, n: int = DEFAULT_N_COMPONENTS):
         """
         Khởi tạo lớp thực hiện biến đổi không gian màu và giảm chiều bằng PCA.
-
+        
         Input:
-            method: Tên không gian màu mục tiêu (v.d: HSV, Lab, YCrCb, Grayscale).
-            n: Số chiều (n_components) cho thuật toán IncrementalPCA.
+            method: Phương pháp hoặc chế độ xử lý được sử dụng.
+            n: Số thành phần chính giữ lại trong phép giảm chiều PCA.
+        
+        Output:
+            None.
         """
         if method is None:
             raise ValueError("Cannot let the method empty")
@@ -37,9 +40,12 @@ class ColorTransform(Preprocessing):
     def fit(self, obj: ImageDataset):
         """
         Huấn luyện bộ chuẩn hóa (Scaler) và thuật toán PCA trên dữ liệu ảnh.
-
+        
         Input:
-            obj: Đối tượng ImageDataset để lấy dữ liệu huấn luyện.
+            obj: Đối tượng dữ liệu đầu vào cần được xử lý.
+        
+        Output:
+            None.
         """
         code = COLOR_MAP[self._method]
         for batch, _ in obj.load():
@@ -77,12 +83,12 @@ class ColorTransform(Preprocessing):
     def transform(self, obj: ImageDataset):
         """
         Biến đổi không gian màu và áp dụng PCA để giảm chiều dữ liệu.
-
+        
         Input:
-            obj: Đối tượng ImageDataset.
-
+            obj: Đối tượng dữ liệu đầu vào cần được xử lý.
+        
         Output:
-            Danh sách các mảng numpy đã được giảm chiều theo từng batch.
+            Giá trị trả về của hàm.
         """
         code = COLOR_MAP[self._method]
         result = []
@@ -109,12 +115,12 @@ class ColorTransform(Preprocessing):
     def fit_transform(self, obj: ImageDataset):
         """
         Vừa huấn luyện vừa thực hiện biến đổi dữ liệu.
-
+        
         Input:
-            obj: Đối tượng ImageDataset.
-
+            obj: Đối tượng dữ liệu đầu vào cần được xử lý.
+        
         Output:
-            Dữ liệu sau khi nén.
+            Giá trị trả về của hàm.
         """
         self.fit(obj)
         return self.transform(obj)
@@ -122,6 +128,12 @@ class ColorTransform(Preprocessing):
     def log(self):
         """
         In thông tin tóm tắt về quá trình biến đổi màu và kết quả PCA.
+        
+        Input:
+            Không có.
+        
+        Output:
+            None.
         """
         print(f"Bước xử lý : {self._step_name}")
         print(f"Tập dữ liệu: {self._dataset_name}")
@@ -135,9 +147,12 @@ class ColorTransform(Preprocessing):
     def visitImageDataset(self, obj: ImageDataset):
         """
         Thực thi quy trình biến đổi không gian màu trên ImageDataset.
-
+        
         Input:
-            obj: Đối tượng ImageDataset.
+            obj: Đối tượng dữ liệu đầu vào cần được xử lý.
+        
+        Output:
+            None.
         """
         self._dataset_name = "Image Dataset"
         try:
@@ -154,9 +169,12 @@ class ColorTransform(Preprocessing):
     def run(self, obj: ImageDataset):
         """
         Hàm chạy chính của quy trình tiền xử lý màu.
-
+        
         Input:
-            obj: Đối tượng cần xử lý.
+            obj: Đối tượng dữ liệu đầu vào cần được xử lý.
+        
+        Output:
+            None.
         """
         if isinstance(obj, ImageDataset):
             self.visitImageDataset(obj)
@@ -170,10 +188,13 @@ class ColorTransformEvaluator(ColorTransform):
     def __init__(self, method: str = None, n: int = DEFAULT_N_COMPONENTS):
         """
         Khởi tạo bộ đánh giá biến đổi màu, tối ưu cho việc cache dữ liệu vào RAM.
-
+        
         Input:
-            method: Không gian màu.
-            n: Số chiều giữ lại.
+            method: Phương pháp hoặc chế độ xử lý được sử dụng.
+            n: Số thành phần chính giữ lại trong phép giảm chiều PCA.
+        
+        Output:
+            None.
         """
         # Kế thừa hoàn toàn hàm __init__ của class cha
         super().__init__(method=method, n=n)
@@ -184,9 +205,12 @@ class ColorTransformEvaluator(ColorTransform):
     def visitImageDataset(self, obj: ImageDataset):
         """
         Ghi đè hàm xử lý dataset để lưu trữ dữ liệu đã biến đổi vào cache.
-
+        
         Input:
-            obj: Đối tượng ImageDataset.
+            obj: Đối tượng dữ liệu đầu vào cần được xử lý.
+        
+        Output:
+            None.
         """
         self._dataset_name = "Image Dataset"
         print(f"   [INFO] Đang chạy Tiền xử lý (Fast-Cache Mode)...")
@@ -207,13 +231,13 @@ class ColorTransformEvaluator(ColorTransform):
     def evaluation(self, obj: ImageDataset, n_repeats: int = 3):
         """
         Thực hiện đánh giá hiệu quả của không gian màu thông qua mô hình Logistic Regression.
-
+        
         Input:
-            obj: Đối tượng ImageDataset (dùng để lấy nhãn).
-            n_repeats: Số lần lặp lại quá trình train/test để lấy trung bình.
-
+            obj: Đối tượng dữ liệu đầu vào cần được xử lý.
+            n_repeats: Số lượng mẫu hoặc số lần lặp dùng trong xử lý/đánh giá.
+        
         Output:
-            Từ điển chứa các chỉ số Accuracy, Precision, Recall, F1-score trung bình.
+            Giá trị trả về của hàm.
         """
         print(f"\n[EVALUATION] Bắt đầu huấn luyện mô hình (Không gian: {self._method})...")
         start_time = time.time()
@@ -247,10 +271,13 @@ class ColorTransformEvaluator(ColorTransform):
     def save_images(self, obj: ImageDataset, base_dir: str = "../data/preprocessing/color_space"):
         """
         Lưu các mẫu ảnh đã được biến đổi không gian màu ra ổ cứng.
-
+        
         Input:
-            obj: Đối tượng ImageDataset.
-            base_dir: Thư mục gốc để lưu ảnh.
+            obj: Đối tượng dữ liệu đầu vào cần được xử lý.
+            base_dir: Đường dẫn tệp hoặc thư mục liên quan đến dữ liệu.
+        
+        Output:
+            None.
         """
         save_dir = os.path.join(base_dir, self._method.lower())
         print(f"   [INFO] Đang xuất file ảnh ra: {save_dir} ... (Vui lòng đợi)")

@@ -15,9 +15,12 @@ class ImageResize(Preprocessing):
     def __init__(self, transform_size: int):
         """
         Khởi tạo lớp thay đổi kích thước ảnh và đánh giá chất lượng.
-
+        
         Input:
-            transform_size: Kích thước mới của ảnh (ví dụ: 32, 64, 128).
+            transform_size: Kích thước hoặc hình dạng mục tiêu trong quá trình xử lý.
+        
+        Output:
+            None.
         """
         if transform_size not in SUPPORT_RESIZE:
             raise ValueError(f"Not Support This Size. Supported sizes: {SUPPORT_RESIZE}")
@@ -39,18 +42,39 @@ class ImageResize(Preprocessing):
 
     @property
     def avg_ssim(self):
+        """
+        Thực thi xử lý trong hàm avg_ssim.
+        
+        Input:
+            Không có.
+        
+        Output:
+            Giá trị trả về của hàm.
+        """
         return self._avg_ssim
     
     @property
     def avg_psnr(self):
+        """
+        Thực thi xử lý trong hàm avg_psnr.
+        
+        Input:
+            Không có.
+        
+        Output:
+            Giá trị trả về của hàm.
+        """
         return self._avg_psnr
 
     def fit(self, arr: list):
         """
         Cập nhật thông tin hình dạng ảnh gốc và đếm số lượng ảnh đã xử lý.
-
+        
         Input:
-            arr: Danh sách các mảng numpy chứa dữ liệu ảnh.
+            arr: Mảng dữ liệu đầu vào cần xử lý.
+        
+        Output:
+            None.
         """
         if not arr:
             raise ValueError("Input array is empty. Cannot fit data.")
@@ -65,14 +89,23 @@ class ImageResize(Preprocessing):
     def transform(self, arr: list) -> list:
         """
         Thực hiện thay đổi kích thước cho một danh sách ảnh sử dụng đa luồng.
-
+        
         Input:
-            arr: Danh sách ảnh gốc.
-
+            arr: Mảng dữ liệu đầu vào cần xử lý.
+        
         Output:
-            Danh sách ảnh sau khi đã thay đổi kích thước.
+            Giá trị trả về của hàm.
         """
         def _resize_single(img):
+            """
+            Thực thi xử lý trong hàm _resize_single.
+            
+            Input:
+                img: Ảnh đầu vào dạng mảng NumPy.
+            
+            Output:
+                Giá trị trả về của hàm.
+            """
             return cv2.resize(img, (self._size, self._size), interpolation=cv2.INTER_AREA)
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=self._max_workers) as executor:
@@ -83,12 +116,12 @@ class ImageResize(Preprocessing):
     def fit_transform(self, arr: list) -> list:
         """
         Vừa cập nhật metadata vừa thực hiện resize ảnh.
-
+        
         Input:
-            arr: Dữ liệu ảnh đầu vào.
-
+            arr: Mảng dữ liệu đầu vào cần xử lý.
+        
         Output:
-            Dữ liệu ảnh sau khi xử lý.
+            Giá trị trả về của hàm.
         """
         self.fit(arr)
         return self.transform(arr)
@@ -96,13 +129,13 @@ class ImageResize(Preprocessing):
     def PSNR(self, original_imgs: list, resized_imgs: list) -> np.ndarray:
         """
         Tính toán chỉ số PSNR (Peak Signal-to-Noise Ratio) để đánh giá độ thất thoát chất lượng.
-
+        
         Input:
-            original_imgs: Danh sách ảnh gốc.
-            resized_imgs: Danh sách ảnh đã resize.
-
+            original_imgs: Danh sách ảnh gốc trước khi resize.
+            resized_imgs: Danh sách ảnh sau khi resize để đo mức suy hao chất lượng.
+        
         Output:
-            Mảng numpy chứa điểm số PSNR của từng cặp ảnh.
+            Giá trị trả về của hàm.
         """
         with concurrent.futures.ThreadPoolExecutor(max_workers=self._max_workers) as executor:
             psnr_list = list(executor.map(calculate_single_psnr, original_imgs, resized_imgs))
@@ -111,13 +144,13 @@ class ImageResize(Preprocessing):
     def SSIM(self, original_imgs: list, resized_imgs: list) -> np.ndarray:
         """
         Tính toán chỉ số SSIM (Structural Similarity Index) để đánh giá độ tương đồng cấu trúc.
-
+        
         Input:
-            original_imgs: Danh sách ảnh gốc.
-            resized_imgs: Danh sách ảnh đã resize.
-
+            original_imgs: Danh sách ảnh gốc trước khi resize.
+            resized_imgs: Danh sách ảnh sau khi resize để đo mức tương đồng cấu trúc.
+        
         Output:
-            Mảng numpy chứa điểm số SSIM của từng cặp ảnh.
+            Giá trị trả về của hàm.
         """
         with concurrent.futures.ThreadPoolExecutor(max_workers=self._max_workers) as executor:
             ssim_list = list(executor.map(calculate_single_ssim, original_imgs, resized_imgs))
@@ -126,9 +159,12 @@ class ImageResize(Preprocessing):
     def visitImageDataset(self, obj: ImageDataset):
         """
         Xử lý quy trình resize và tính toán chất lượng cho đối tượng ImageDataset theo batch.
-
+        
         Input:
-            obj: Đối tượng ImageDataset.
+            obj: Đối tượng dữ liệu đầu vào cần được xử lý.
+        
+        Output:
+            None.
         """
         self._dataset_path = obj.folder_path if obj.folder_path else "Unknown Path"
         
@@ -175,9 +211,12 @@ class ImageResize(Preprocessing):
     def run(self, obj: ImageDataset):
         """
         Thực thi quá trình tiền xử lý resize.
-
+        
         Input:
-            obj: Đối tượng ImageDataset.
+            obj: Đối tượng dữ liệu đầu vào cần được xử lý.
+        
+        Output:
+            None.
         """
         self.visitImageDataset(obj)
         return
@@ -185,6 +224,12 @@ class ImageResize(Preprocessing):
     def log(self):
         """
         In log kết quả về kích thước mục tiêu, số lượng xử lý và chất lượng ảnh (PSNR, SSIM).
+        
+        Input:
+            Không có.
+        
+        Output:
+            None.
         """
         print("\n" + "="*50)
         print(f"1. Processing Step : {self._step_name}")

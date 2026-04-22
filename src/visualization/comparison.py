@@ -7,11 +7,14 @@ from typing import Dict
 
 def plot_deduplicate_comparison(initial_count, final_count):
     """
-    Visualizes the number of images before and after the deduplication process using a bar chart.
+    Trực quan hóa số lượng ảnh trước và sau khi loại bỏ trùng lặp bằng biểu đồ thanh.
     
-    Args:
-        initial_count (int): Original number of images in the dataset.
-        final_count (int): Remaining number of images after processing.
+    Input:
+        initial_count (int): Số lượng ảnh ban đầu.
+        final_count (int): Số lượng ảnh sau khi xử lý.
+
+    Output:
+        None (hiển thị biểu đồ matplotlib).
     """
     labels = ['Before Removal', 'After Removal']
     counts = [initial_count, final_count]
@@ -35,13 +38,16 @@ def plot_deduplicate_comparison(initial_count, final_count):
 
 def plot_phash_comparison(img1, img2, hash1, hash2, distance, title="pHash Comparison"):
     """
-    Displays two images side-by-side with their Hash strings and Hamming distance for experimental analysis.
+    Hiển thị hai ảnh cạnh nhau kèm chuỗi Hash và khoảng cách Hamming.
     
-    Args:
-        img1, img2 (numpy.ndarray): The two images to compare (BGR format from OpenCV).
-        hash1, hash2 (str): Corresponding pHash strings.
-        distance (int): Calculated Hamming distance between the two hashes.
-        title (str): Title for the visualization.
+    Input:
+        img1, img2 (numpy.ndarray): Hai ảnh cần so sánh (BGR từ OpenCV).
+        hash1, hash2 (str): Chuỗi pHash tương ứng.
+        distance (int): Khoảng cách Hamming giữa hai hash.
+        title (str): Tiêu đề biểu đồ.
+
+    Output:
+        None (hiển thị biểu đồ matplotlib).
     """
     fig, axes = plt.subplots(1, 2, figsize=(14, 6))
     

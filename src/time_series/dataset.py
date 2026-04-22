@@ -55,6 +55,15 @@ class TimeSeriesDataset(Object):
         self._columns = value.columns.tolist()
 
     def load(self):
+        """
+        Nạp dữ liệu từ file CSV, ép kiểu cột thời gian và sắp xếp theo thời gian.
+
+        Input:
+            Không có (sử dụng _folder_path đã khởi tạo).
+
+        Output:
+            None (cập nhật _data, _columns, _shape nội bộ).
+        """
         self._data = file.load_table(self._folder_path)
         self._columns = self._data.columns.tolist()
         
@@ -89,7 +98,15 @@ class TimeSeriesDataset(Object):
         return self._features, self._target
 
     def temporal_split(self, train_ratio: float = 0.8):
-        """Chia dữ liệu thành hai tập Train/Test theo thứ tự thời gian (không xáo trộn)."""
+        """
+        Chia dữ liệu thành Train/Test theo thứ tự thời gian (không xáo trộn).
+
+        Input:
+            train_ratio: Tỉ lệ dữ liệu huấn luyện (mặc định 0.8).
+
+        Output:
+            Tuple (train_df, test_df): Hai DataFrame chia theo thời gian.
+        """
         if self._data is None:
             raise ValueError("Dataset is empty. Call load() first.")
             
@@ -101,6 +118,15 @@ class TimeSeriesDataset(Object):
         return train_df, test_df
 
     def info(self):
+        """
+        In thông tin metadata tổng quan của tập dữ liệu chuỗi thời gian.
+
+        Input:
+            Không có.
+
+        Output:
+            None (in ra màn hình).
+        """
         print("--- Metadata of Time Series Dataset ---")
         print(f"\tFile Path: {self._folder_path if self._folder_path else 'Empty'}")
         print(f"\tDataset Shape: {self._shape} (Rows, Cols)")
@@ -116,6 +142,15 @@ class TimeSeriesDataset(Object):
         return
 
     def clone(self):
+        """
+        Tạo bản sao độc lập của tập dữ liệu chuỗi thời gian.
+
+        Input:
+            Không có.
+
+        Output:
+            TimeSeriesDataset: Đối tượng bản sao với dữ liệu được deep copy.
+        """
         dataset_clone = TimeSeriesDataset(self._folder_path, self._time_column)
         if self._data is not None:
             dataset_clone.data = self._data.copy()
@@ -124,5 +159,14 @@ class TimeSeriesDataset(Object):
         return dataset_clone
 
     def accept(self, service: Service):
+        """
+        Chấp nhận một Service (Visitor) để thực thi tác vụ trên dataset.
+
+        Input:
+            service: Đối tượng Service cần thực thi.
+
+        Output:
+            None.
+        """
         service.run(self)
         return

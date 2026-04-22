@@ -7,7 +7,18 @@ from core.service_base import Visualization
 from table.dataset import TableDataset  
 
 class MissingValueMatrix(Visualization):
+    """Trực quan hóa và phân tích dữ liệu thiếu (Missing Values) trong tập dữ liệu bảng."""
+
     def __init__(self, drop_threshold: float = 40.0):
+        """
+        Khởi tạo bộ phân tích dữ liệu thiếu.
+
+        Input:
+            drop_threshold: Ngưỡng % thiếu để khuyến nghị loại bỏ cột (mặc định 40%).
+
+        Output:
+            None.
+        """
         self._dataset = None
         self._df = None
         self._status = "Not Run"
@@ -18,6 +29,15 @@ class MissingValueMatrix(Visualization):
         self._missing_stats = {}
 
     def run(self):
+        """
+        Thực thi quy trình phân tích dữ liệu thiếu: thống kê, trực quan và nhận xét.
+
+        Input:
+            Không có (sử dụng _dataset đã gán).
+
+        Output:
+            None.
+        """
         if self._dataset is None:
             self._status = "Failed — Dataset is None"
             return
@@ -30,6 +50,15 @@ class MissingValueMatrix(Visualization):
             self._analyze()
 
     def visitTableDataset(self, obj: TableDataset):
+        """
+        Gắn TableDataset và tính toán thống kê dữ liệu thiếu.
+
+        Input:
+            obj: Đối tượng TableDataset chứa dữ liệu cần phân tích.
+
+        Output:
+            None (cập nhật _status và _missing_stats nội bộ).
+        """
         try:
             self._dataset = obj
             self._df = obj.data
@@ -43,17 +72,50 @@ class MissingValueMatrix(Visualization):
         except Exception as e:
             self._status = f"Failed — {str(e)}"
     def visitImageDataset(self, obj):
-        # Từ chối khéo léo vì thuật toán này không dùng cho ảnh
+        """
+        Không hỗ trợ dữ liệu hình ảnh.
+
+        Input:
+            obj: Đối tượng ImageDataset.
+
+        Output:
+            None.
+        """
         self._status = "Failed — MissingValueMatrix không hỗ trợ tập dữ liệu Ảnh (ImageDataset)."
 
     def visitTextDataset(self, obj):
-        # Bổ sung luôn phòng trường hợp lớp cha yêu cầu
+        """
+        Không hỗ trợ dữ liệu văn bản.
+
+        Input:
+            obj: Đối tượng TextDataset.
+
+        Output:
+            None.
+        """
         self._status = "Failed — MissingValueMatrix không hỗ trợ tập dữ liệu Văn bản (TextDataset)."
 
     def visitTimeSeriesDataset(self, obj):
-        # Bổ sung luôn phòng trường hợp lớp cha yêu cầu
+        """
+        Không hỗ trợ dữ liệu chuỗi thời gian.
+
+        Input:
+            obj: Đối tượng TimeSeriesDataset.
+
+        Output:
+            None.
+        """
         self._status = "Failed — MissingValueMatrix không hỗ trợ tập dữ liệu Chuỗi thời gian (TimeSeriesDataset)."
     def log(self):
+        """
+        In trạng thái thực thi của bước phân tích.
+
+        Input:
+            Không có.
+
+        Output:
+            None (in ra màn hình).
+        """
         print("=" * 55)
         print(f"Step    : {self._step_name}")
         print(f"Dataset : {self._dataset._folder_path if self._dataset else 'None'}")
@@ -61,6 +123,15 @@ class MissingValueMatrix(Visualization):
         print("=" * 55)
 
     def _compute_stats(self):
+        """
+        Tính toán thống kê dữ liệu thiếu theo cột, dòng và tương quan thiếu.
+
+        Input:
+            Không có (sử dụng _df nội bộ).
+
+        Output:
+            None (cập nhật _missing_stats dict).
+        """
         total_rows = len(self._df)
         missing_count = self._df.isnull().sum()
         missing_pct = (missing_count / total_rows) * 100
@@ -86,6 +157,15 @@ class MissingValueMatrix(Visualization):
             self._missing_stats['corr'] = None
 
     def _plot_visualizations(self):
+        """
+        Vẽ ma trận dữ liệu thiếu (Matrix) và Heatmap tương quan thiếu.
+
+        Input:
+            Không có (sử dụng _df và _missing_stats nội bộ).
+
+        Output:
+            None (hiển thị biểu đồ matplotlib).
+        """
         # 1. TỐI ƯU CỘT: Vẫn nên giữ việc lọc các cột CÓ DỮ LIỆU THIẾU để trục X bớt chật
         missing_cols = self._df.columns[self._df.isnull().any()].tolist()
         df_plot = self._df[missing_cols] if len(missing_cols) > 0 else self._df
@@ -112,6 +192,15 @@ class MissingValueMatrix(Visualization):
         plt.show()
 
     def _analyze(self):
+        """
+        Phân tích kết quả và hiển thị nhận xét chi tiết dưới dạng Markdown.
+
+        Input:
+            Không có.
+
+        Output:
+            None (hiển thị Markdown trong IPython).
+        """
         severe_cols = ", ".join([f"`{c}` ({v:.1f}%)" for c, v in self._missing_stats['severe'].items()])
         low_cols = ", ".join([f"`{c}` ({v:.1f}%)" for c, v in self._missing_stats['low'].items()][:5]) + "..."
         

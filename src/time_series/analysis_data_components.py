@@ -17,19 +17,44 @@ class AnalysisDataTimeComponents(Visualization):
         self.feature_name = feature_name
 
     def change_region(self, new_region: str):
-        """Thay đổi khu vực khảo sát."""
+        """
+        Thay đổi khu vực khảo sát.
+
+        Input:
+            new_region: Tên khu vực mới.
+
+        Output:
+            None.
+        """
         self.region = new_region
         print(f"[INFO] Đã chuyển khu vực khảo sát sang: {self.region}")
 
     def change_feature(self, new_feature: str, dataset_columns: list):
-        """Thay đổi biến khảo sát."""
+        """
+        Thay đổi biến khảo sát.
+
+        Input:
+            new_feature: Tên biến mới.
+            dataset_columns: Danh sách các cột hợp lệ trong dataset.
+
+        Output:
+            None.
+        """
         if new_feature not in dataset_columns:
             raise ValueError(f"[ERROR] Biến '{new_feature}' không tồn tại trong Dataset!")
         self.feature_name = new_feature
         print(f"[INFO] Đã chuyển biến khảo sát sang: {self.feature_name}")
 
     def run(self, dataset):
-        """Thực thi trích xuất dữ liệu và vẽ biểu đồ chuỗi thời gian."""
+        """
+        Trích xuất dữ liệu và vẽ biểu đồ chuỗi thời gian (Time Plot).
+
+        Input:
+            dataset: Đối tượng TimeSeriesDataset chứa dữ liệu.
+
+        Output:
+            None (hiển thị biểu đồ).
+        """
         df = dataset.data
         time_col = dataset._time_column
         

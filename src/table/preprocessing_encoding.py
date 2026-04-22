@@ -16,6 +16,17 @@ class _BaseCategoricalEncoding(Preprocessing):
     """Shared workflow for categorical encoders used on TableDataset."""
 
     def __init__(self, step_name: str, columns: list[str] | None = None, drop_original: bool = True):
+        """
+        Khởi tạo encoder cơ sở.
+
+        Input:
+            step_name: Tên bước xử lý.
+            columns: Danh sách cột cần mã hóa (None = tự phát hiện cột categorical).
+            drop_original: True nếu xóa cột gốc sau mã hóa.
+
+        Output:
+            None.
+        """
         self._step_name = step_name
         self._columns = columns
         self._drop_original = drop_original
@@ -47,6 +58,15 @@ class _BaseCategoricalEncoding(Preprocessing):
         return self._vif_report.copy()
 
     def _to_dataframe(self, X: Any) -> tuple[pd.DataFrame, bool]:
+        """
+        Chuyển đổi đầu vào thành DataFrame.
+
+        Input:
+            X: Dữ liệu đầu vào (DataFrame hoặc numpy array 2D).
+
+        Output:
+            Tuple (DataFrame, bool): DataFrame đã chuyển đổi và cờ is_dataframe.
+        """
         if isinstance(X, pd.DataFrame):
             return X.copy(), True
 
@@ -58,6 +78,17 @@ class _BaseCategoricalEncoding(Preprocessing):
         return pd.DataFrame(X_arr, columns=columns), False
 
     def _coerce_target(self, y: Any, index: pd.Index, required: bool = False) -> pd.Series | None:
+        """
+        Chuyển đổi target thành pd.Series với index khớp.
+
+        Input:
+            y: Biến mục tiêu (Series, array, hoặc None).
+            index: Index từ DataFrame X.
+            required: True nếu bắt buộc phải có target.
+
+        Output:
+            pd.Series | None: Target đã chuẩn hóa hoặc None.
+        """
         if y is None:
             if required:
                 raise ValueError("This encoder requires target values y.")
@@ -79,6 +110,15 @@ class _BaseCategoricalEncoding(Preprocessing):
         return y_series
 
     def _resolve_columns(self, df: pd.DataFrame) -> list[str]:
+        """
+        Xác định danh sách cột categorical cần mã hóa.
+
+        Input:
+            df: DataFrame đầu vào.
+
+        Output:
+            list[str]: Danh sách tên cột đã xác định.
+        """
         if self._columns is None:
             return df.select_dtypes(include=["object", "category", "bool"]).columns.tolist()
 
@@ -89,10 +129,29 @@ class _BaseCategoricalEncoding(Preprocessing):
 
     @staticmethod
     def _normalize_category(series: pd.Series) -> pd.Series:
+        """
+        Chuẩn hóa cột categorical: ép string và điền giá trị thiếu.
+
+        Input:
+            series: Series dữ liệu categorical.
+
+        Output:
+            pd.Series: Series đã chuẩn hóa.
+        """
         return series.astype("string").fillna("__MISSING__")
 
     @staticmethod
     def _compute_vif(df: pd.DataFrame, eps: float = 1e-12) -> pd.DataFrame:
+        """
+        Tính Variance Inflation Factor (VIF) cho các cột số.
+
+        Input:
+            df: DataFrame chứa dữ liệu đã mã hóa.
+            eps: Hằng số tránh chia cho 0.
+
+        Output:
+            pd.DataFrame: Bảng VIF sắp xếp giảm dần theo giá trị VIF.
+        """
         numeric = df.select_dtypes(include=[np.number]).copy()
         if numeric.shape[1] < 2:
             return pd.DataFrame(columns=["feature", "vif"])
@@ -135,12 +194,41 @@ class _BaseCategoricalEncoding(Preprocessing):
         return pd.DataFrame(vif_rows).sort_values("vif", ascending=False).reset_index(drop=True)
 
     def _fit_encoder(self, X: pd.DataFrame, y: pd.Series | None):
+        """
+        Logic fit cụ thể (lớp con phải implement).
+
+        Input:
+            X: DataFrame features.
+            y: Series target (có thể None).
+
+        Output:
+            None.
+        """
         raise NotImplementedError
 
     def _transform_encoder(self, X: pd.DataFrame) -> pd.DataFrame:
+        """
+        Logic transform cụ thể (lớp con phải implement).
+
+        Input:
+            X: DataFrame features.
+
+        Output:
+            pd.DataFrame: Dữ liệu đã mã hóa.
+        """
         raise NotImplementedError
 
     def fit(self, X, y=None):
+        """
+        Tính toán mapping từ dữ liệu huấn luyện.
+
+        Input:
+            X: Dữ liệu features (DataFrame hoặc numpy array).
+            y: Biến mục tiêu (tùy chọn).
+
+        Output:
+            self: Trả về chính đối tượng encoder.
+        """
         X_df, _ = self._to_dataframe(X)
         y_series = self._coerce_target(y, X_df.index, required=False)
 
@@ -151,6 +239,15 @@ class _BaseCategoricalEncoding(Preprocessing):
         return self
 
     def transform(self, X):
+        """
+        Áp dụng mã hóa lên dữ liệu dựa trên mapping đã fit.
+
+        Input:
+            X: Dữ liệu features cần mã hóa.
+
+        Output:
+            pd.DataFrame hoặc np.ndarray: Dữ liệu đã mã hóa.
+        """
         if not self._is_fitted:
             raise ValueError("Encoder is not fitted. Call fit before transform.")
 
@@ -164,14 +261,42 @@ class _BaseCategoricalEncoding(Preprocessing):
         return transformed_df if is_dataframe else transformed_df.to_numpy()
 
     def fit_transform(self, X, y=None):
+        """
+        Kết hợp fit và transform trong một bước.
+
+        Input:
+            X: Dữ liệu features.
+            y: Biến mục tiêu (tùy chọn).
+
+        Output:
+            pd.DataFrame hoặc np.ndarray: Dữ liệu đã mã hóa.
+        """
         self.fit(X, y)
         return self.transform(X)
 
     def visitImageDataset(self, obj):
+        """
+        Không hỗ trợ dữ liệu hình ảnh.
+
+        Input:
+            obj: Đối tượng ImageDataset.
+
+        Output:
+            None (in cảnh báo).
+        """
         print(f"[WARNING] {self.__class__.__name__} does not support ImageDataset.")
         return
 
     def visitTableDataset(self, obj):
+        """
+        Triển khai mã hóa lên đối tượng TableDataset.
+
+        Input:
+            obj: Đối tượng TableDataset chứa dữ liệu cần mã hóa.
+
+        Output:
+            None (cập nhật trực tiếp dữ liệu trong obj).
+        """
         self._dataset_path = getattr(obj, "_folder_path", "Unknown")
 
         try:
@@ -206,9 +331,27 @@ class _BaseCategoricalEncoding(Preprocessing):
             self._error_message = str(exc)
 
     def run(self, obj):
+        """
+        Điểm vào thực thi - gọi visitTableDataset.
+
+        Input:
+            obj: Đối tượng TableDataset.
+
+        Output:
+            None.
+        """
         self.visitTableDataset(obj)
 
     def log(self):
+        """
+        In thông tin trạng thái và kết quả mã hóa.
+
+        Input:
+            Không có.
+
+        Output:
+            None (in ra màn hình).
+        """
         print("\n" + "=" * 60)
         print(f"Step      : {self._step_name}")
         print(f"Dataset   : {self._dataset_path}")
@@ -237,6 +380,21 @@ class TargetEncodingCV(_BaseCategoricalEncoding):
         suffix: str = "_target",
         drop_original: bool = True,
     ):
+        """
+        Khởi tạo Target Encoding với chiến lược out-of-fold (CV).
+
+        Input:
+            columns: Danh sách cột cần mã hóa (None = tự phát hiện).
+            n_splits: Số folds cho KFold (mặc định 5).
+            shuffle: True nếu xáo trộn dữ liệu.
+            random_state: Seed cho random.
+            smoothing: Hệ số smoothing giảm target leakage.
+            suffix: Hậu tố cột mã hóa.
+            drop_original: True nếu xóa cột gốc.
+
+        Output:
+            None.
+        """
         super().__init__(
             step_name="Target Encoding (CV Mean)",
             columns=columns,
@@ -258,6 +416,16 @@ class TargetEncodingCV(_BaseCategoricalEncoding):
         self._mapping: dict[str, pd.Series] = {}
 
     def _require_numeric_target(self, y: pd.Series | None, index: pd.Index) -> pd.Series:
+        """
+        Đảm bảo target là số và không có giá trị thiếu.
+
+        Input:
+            y: Biến mục tiêu.
+            index: Index DataFrame.
+
+        Output:
+            pd.Series: Target dạng số.
+        """
         y_series = self._coerce_target(y, index, required=True)
         y_num = pd.to_numeric(y_series, errors="coerce")
         if y_num.isna().any():
@@ -265,6 +433,16 @@ class TargetEncodingCV(_BaseCategoricalEncoding):
         return y_num
 
     def _build_mapping(self, category_series: pd.Series, y: pd.Series) -> pd.Series:
+        """
+        Xây dựng bảng mapping từ category sang giá trị trung bình target (có smoothing).
+
+        Input:
+            category_series: Series chứa giá trị categorical.
+            y: Series target số.
+
+        Output:
+            pd.Series: Mapping từ category sang giá trị đã mã hóa.
+        """
         safe_cat = self._normalize_category(category_series)
         stats = pd.DataFrame({"target": y, "cat": safe_cat}).groupby("cat")["target"].agg(["mean", "count"])
 
@@ -277,6 +455,16 @@ class TargetEncodingCV(_BaseCategoricalEncoding):
         return smooth
 
     def _fit_encoder(self, X: pd.DataFrame, y: pd.Series | None):
+        """
+        Tính global mean và xây dựng mapping target encoding.
+
+        Input:
+            X: DataFrame features.
+            y: Series target.
+
+        Output:
+            None.
+        """
         y_num = self._require_numeric_target(y, X.index)
         self._global_mean = float(y_num.mean())
         self._mapping = {}
@@ -285,6 +473,15 @@ class TargetEncodingCV(_BaseCategoricalEncoding):
             self._mapping[col] = self._build_mapping(X[col], y_num)
 
     def _transform_encoder(self, X: pd.DataFrame) -> pd.DataFrame:
+        """
+        Áp dụng target encoding mapping.
+
+        Input:
+            X: DataFrame features.
+
+        Output:
+            pd.DataFrame: Dữ liệu đã target encoding.
+        """
         transformed = X.copy()
 
         for col in self._resolved_columns:
@@ -355,6 +552,17 @@ class BinaryEncoding(_BaseCategoricalEncoding):
         min_cardinality: int = 20,
         drop_original: bool = True,
     ):
+        """
+        Khởi tạo Binary Encoding cho cột categorical có cardinality cao.
+
+        Input:
+            columns: Danh sách cột cần mã hóa.
+            min_cardinality: Ngưỡng cardinality tối thiểu để áp dụng.
+            drop_original: True nếu xóa cột gốc.
+
+        Output:
+            None.
+        """
         super().__init__(
             step_name="Binary Encoding",
             columns=columns,
@@ -417,6 +625,17 @@ class FrequencyEncoding(_BaseCategoricalEncoding):
         suffix: str = "_freq",
         drop_original: bool = True,
     ):
+        """
+        Khởi tạo Frequency Encoding.
+
+        Input:
+            columns: Danh sách cột cần mã hóa.
+            suffix: Hậu tố cột mã hóa.
+            drop_original: True nếu xóa cột gốc.
+
+        Output:
+            None.
+        """
         super().__init__(
             step_name="Frequency Encoding",
             columns=columns,
@@ -455,6 +674,18 @@ class OneHotEncoding(_BaseCategoricalEncoding):
         drop_original: bool = True,
         prefix_sep: str = "_",
     ):
+        """
+        Khởi tạo One-Hot Encoding.
+
+        Input:
+            columns: Danh sách cột cần mã hóa.
+            drop_first: True nếu bỏ cột đầu tiên (tránh multicollinearity).
+            drop_original: True nếu xóa cột gốc.
+            prefix_sep: Ký tự ngăn cách prefix.
+
+        Output:
+            None.
+        """
         super().__init__(
             step_name="One-Hot Encoding",
             columns=columns,
@@ -509,6 +740,18 @@ class OrdinalEncoding(_BaseCategoricalEncoding):
         unknown_value: int = -1,
         suffix: str = "_ord",
     ):
+        """
+        Khởi tạo Ordinal Encoding.
+
+        Input:
+            columns: Danh sách cột cần mã hóa.
+            drop_original: True nếu xóa cột gốc.
+            unknown_value: Giá trị gán cho category không biết (mặc định -1).
+            suffix: Hậu tố cột mã hóa.
+
+        Output:
+            None.
+        """
         super().__init__(
             step_name="Ordinal Encoding",
             columns=columns,
@@ -543,6 +786,15 @@ class EncodingComparison:
     """Compare multiple encoders and summarize VIF impact."""
 
     def __init__(self, vif_threshold: float = 10.0):
+        """
+        Khởi tạo bộ so sánh encoder.
+
+        Input:
+            vif_threshold: Ngưỡng VIF để xác định cột có đa cộng tuyến cao.
+
+        Output:
+            None.
+        """
         if vif_threshold <= 0:
             raise ValueError("vif_threshold must be > 0.")
         self._vif_threshold = vif_threshold
@@ -553,6 +805,17 @@ class EncodingComparison:
         return self._summary.copy()
 
     def compare(self, X, y, encoders: dict[str, _BaseCategoricalEncoding]) -> pd.DataFrame:
+        """
+        Chạy nhiều encoder và so sánh kết quả VIF.
+
+        Input:
+            X: Dữ liệu features.
+            y: Biến mục tiêu.
+            encoders: Dict mapping tên phương pháp -> đối tượng encoder.
+
+        Output:
+            pd.DataFrame: Bảng tổng hợp so sánh các encoder.
+        """
         rows: list[dict[str, float | int | str]] = []
 
         for method_name, encoder in encoders.items():

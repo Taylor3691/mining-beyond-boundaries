@@ -6,6 +6,16 @@ import numpy as np
 import pandas as pd
 
 def batch_loader(paths: list[str], batch_size: int = config.BATCH_SIZE):
+    """
+    Tải ảnh theo từng batch từ danh sách đường dẫn.
+
+    Input:
+        paths: Danh sách đường dẫn tới các file ảnh.
+        batch_size: Số lượng ảnh tối đa mỗi batch (mặc định từ config).
+
+    Output:
+        Generator trả về tuple (batch_images, batch_indices) cho mỗi batch.
+    """
     for i in range(0, len(paths), batch_size):
         batch = []
         index = list(range(i, min(i + batch_size, len(paths))))
@@ -24,6 +34,18 @@ def batch_loader(paths: list[str], batch_size: int = config.BATCH_SIZE):
     return
 
 def load_image_paths(path: str):
+    """
+    Quét thư mục gốc và trả về danh sách đường dẫn ảnh, nhãn, và tên file theo từng class.
+
+    Input:
+        path: Đường dẫn thư mục gốc chứa các thư mục con theo tên lớp.
+
+    Output:
+        Tuple (paths, labels, filenames):
+            paths: Danh sách đường dẫn tuyệt đối tới từng file ảnh.
+            labels: Danh sách chỉ số lớp tương ứng.
+            filenames: Danh sách tên file đã đặt lại theo quy tắc <class>_<index>.<ext>.
+    """
     root = Path(path)
     class_names = config.CLASS_NAMES
     class_idx = config.CLASS_INDEX
@@ -49,6 +71,15 @@ def load_image_paths(path: str):
     return paths, labels, filenames
 
 def load_table(path: str):
+    """
+    Đọc file CSV vào DataFrame.
+
+    Input:
+        path: Đường dẫn tới file CSV.
+
+    Output:
+        pd.DataFrame chứa dữ liệu bảng đã nạp.
+    """
     try:
         df = pd.read_csv(path, low_memory=False)
         return df
@@ -56,6 +87,18 @@ def load_table(path: str):
         raise IOError(f"Error loading CSV file from{path}: {e}")
 
 def save_images(path: str, images: np.ndarray, file_names: list[str], is_classwise: bool = True):
+    """
+    Lưu danh sách ảnh vào thư mục đích, có thể phân theo class.
+
+    Input:
+        path: Đường dẫn thư mục đích để lưu ảnh.
+        images: Mảng numpy chứa các ảnh cần lưu.
+        file_names: Danh sách tên file tương ứng cho mỗi ảnh.
+        is_classwise: True nếu tạo thư mục con theo tên class (mặc định True).
+
+    Output:
+        None (lưu file ảnh vào ổ đĩa).
+    """
     folder_save = Path(path)
     folder_save.mkdir(parents=True, exist_ok=True)
     if is_classwise:
@@ -70,9 +113,21 @@ def save_images(path: str, images: np.ndarray, file_names: list[str], is_classwi
     return
 
 def save_table(path: str, data: pd.DataFrame, file_name: str = "processed_data.csv"):
+    """
+    Lưu DataFrame ra file CSV tại thư mục chỉ định.
+
+    Input:
+        path: Đường dẫn thư mục đích.
+        data: DataFrame cần lưu.
+        file_name: Tên file CSV đầu ra (mặc định 'processed_data.csv').
+
+    Output:
+        None (lưu file CSV vào ổ đĩa).
+    """
     try:
         folder = Path(path)
         folder.mkdir(parents=True, exist_ok=True)
         data.to_csv(folder / file_name, index=False)
     except Exception as e:
         raise IOError(f"Error saving CSV file to {path}: {e}")
+

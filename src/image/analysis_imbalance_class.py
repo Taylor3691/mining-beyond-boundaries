@@ -9,6 +9,12 @@ class Imbalance(Visualization):
     def __init__(self):
         """
         Khởi tạo lớp phân tích sự mất cân bằng giữa các lớp dữ liệu.
+        
+        Input:
+            Không có.
+        
+        Output:
+            None.
         """
         self._step_name = "Analysis Class Imbalance"
         self._dataset_info = "Unknown Dataset"
@@ -19,9 +25,12 @@ class Imbalance(Visualization):
     def visitImageDataset(self, dataset: ImageDataset):
         """
         Thực hiện đếm số lượng mẫu trong từng lớp của tập dữ liệu.
-
+        
         Input:
-            dataset: Đối tượng ImageDataset muốn phân tích.
+            dataset: Đối tượng dữ liệu đầu vào cần được xử lý.
+        
+        Output:
+            None.
         """
         # Cập nhật thông tin tập dữ liệu đang xử lý
         folder = dataset.folder_path if dataset.folder_path else "Empty Path"
@@ -55,12 +64,12 @@ class Imbalance(Visualization):
     def run(self, dataset: ImageDataset):
         """
         Chạy quy trình phân tích và vẽ biểu đồ phân phối lớp.
-
+        
         Input:
-            dataset: Đối tượng ImageDataset.
-
+            dataset: Đối tượng dữ liệu đầu vào cần được xử lý.
+        
         Output:
-            Từ điển chứa số lượng mẫu của từng lớp.
+            Giá trị trả về của hàm.
         """
         # Chạy logic xử lý
         self.visitImageDataset(dataset)
@@ -76,10 +85,12 @@ class Imbalance(Visualization):
     def log(self):
         """
         Thực hiện in ra màn hình các thông tin xử lý trong giai đoạn này bao gồm
-        1. Tên bước xử lý (VD: Analysis Histogram Distribution)
-        2. Tập dữ liệu dữ lý
-        3. Trạng thái (Success/Failed)
-        4. In ra thông tin kết quả trả về khi tính toán, linh hoạt trong việc chỉnh sửa hàm
+        
+        Input:
+            Không có.
+        
+        Output:
+            None.
         """
         print("\n" + "-"*50)
         print(f"1. Tên bước xử lý : {self._step_name}")
@@ -100,6 +111,15 @@ class Imbalance(Visualization):
         print("-"*50 + "\n")
 
 def main():
+    """
+    Thực thi xử lý trong hàm main.
+    
+    Input:
+        Không có.
+    
+    Output:
+        None.
+    """
     try:
         dataset = ImageDataset(path=PATH_FOLDER_IMAGE_TEST) 
     except Exception as e:
