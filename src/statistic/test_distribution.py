@@ -180,8 +180,6 @@ class ShapiroWilkTesting(DistributionTesting):
 - Mức p-Value là `{self._p_value:.4e}` {'**lớn**' if self._is_normal else '**nhỏ**'} hơn Alpha.
 -  {conclusion}
 
-### 3. Phân tích Thực tiễn
-- {practical_note}
 """
         display(Markdown(md))
 
@@ -271,8 +269,5 @@ class AgostinoPearsonTesting(DistributionTesting):
 ### 2. Kết luận
 - Mức p-Value là `{self._p_value:.4e}` {'**lớn**' if self._is_normal else '**nhỏ**'} hơn Alpha.
 - {conclusion}
-
-### 3. Phân tích Thực tiễn 
-- {practical_note}
 """
         display(Markdown(md))
