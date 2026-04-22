@@ -9,13 +9,30 @@ from config.settings import DEFAULT_SIZE
 
 class EdgeDetectionAnalysis(Service):
     def __init__(self, n_samples: int = 1000):
+        """
+        Khởi tạo đối tượng EdgeDetectionAnalysis.
+        
+        Input:
+            n_samples: Số lượng mẫu ảnh tối đa cần phân tích (mặc định là 1000).
+        
+        Output:
+            None.
+        """
         self._step_name = "Analysis: Edge Detection & Density"
         self._status = "Initialized"
         self.n_samples = n_samples
         self.results_df = None
         
     def _apply_edge_filters(self, img_gray):
-        """Áp dụng 6 bộ lọc cạnh và trả về Mật độ cạnh (Edge Density)"""
+        """
+        Áp dụng 6 bộ lọc cạnh và tính toán mật độ cạnh (Edge Density).
+        
+        Input:
+            img_gray: Ảnh đầu vào ở dạng ảnh xám (grayscale).
+        
+        Output:
+            Dictionary chứa mật độ cạnh cho từng phương pháp (Canny, Sobel, Prewitt).
+        """
         densities = {}
         total_pixels = img_gray.shape[0] * img_gray.shape[1]
         
@@ -43,8 +60,17 @@ class EdgeDetectionAnalysis(Service):
         
         return densities
 
-    # HÀM BẮT BUỘC SỐ 1 THEO ABSTRACT CLASS
+
     def visitImageDataset(self, dataset: ImageDataset):
+        """
+        Thực thi xử lý dữ liệu theo kiểu đối tượng đầu vào.
+        
+        Input:
+            dataset: Đối tượng dữ liệu đầu vào cần được xử lý (ImageDataset).
+        
+        Output:
+            DataFrame chứa kết quả phân tích mật độ cạnh.
+        """
         print(f"[INFO] Bắt đầu trích xuất đặc trưng Cạnh trên mẫu {self.n_samples} ảnh...")
         
         all_paths = np.array(dataset.image_paths)
@@ -93,8 +119,26 @@ class EdgeDetectionAnalysis(Service):
         return self.results_df
 
     def run(self, dataset: ImageDataset):
+        """
+        Hàm khởi chạy phân tích cho tập dữ liệu.
+        
+        Input:
+            dataset: Đối tượng dữ liệu đầu vào cần được xử lý.
+        
+        Output:
+            Kết quả từ hàm visit tương ứng với kiểu dữ liệu.
+        """
         if isinstance(dataset, ImageDataset):
             return self.visitImageDataset(dataset)
 
     def log(self):
+        """
+        Ghi log trạng thái của tiến trình.
+        
+        Input:
+            None.
+        
+        Output:
+            None.
+        """
         print(f"[STATUS] {self._step_name} - {self._status}")
