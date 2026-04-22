@@ -1,15 +1,11 @@
 from __future__ import annotations
-
 from typing import Any
 import warnings
-
 import numpy as np
 import pandas as pd
 from statsmodels.tsa.stattools import grangercausalitytests
-
 from core import Testing
 from visualization.relationship import plot_granger_causality_directed_graph
-
 
 class GrangerCausalityTesting(Testing):
 	"""
@@ -29,26 +25,26 @@ class GrangerCausalityTesting(Testing):
 		test_stat: str = "ssr_chi2test",
 		verbose: bool = False,
 	):
-		super().__init__()
+		"""
+		Khởi tạo bộ kiểm định Granger Causality.
 
-		# Cấu hình chính của kiểm định
+		Input:
+			variables: Danh sách các biến cần kiểm định.
+			max_lag: Độ trễ tối đa.
+			alpha: Mức ý nghĩa thống kê.
+			test_stat: Loại thống kê kiểm định (mặc định ssr_chi2test).
+		"""
+		super().__init__()
 		self.variables = variables
 		self.max_lag = max_lag
 		self.alpha = alpha
 		self.test_stat = test_stat
 		self.verbose = verbose
-
-		# Metadata phục vụ log/report
 		self.step_name = "Granger Causality Test"
 		self.dataset_name = "Unknown"
 		self.status = "Pending"
-
-		# Kết quả kiểm định
-		# - p_value_matrix: hàng là biến gây tác động (cause), cột là biến bị tác động (effect)
 		self.p_value_matrix: pd.DataFrame | None = None
-		# - best_lag_matrix: lag tốt nhất (lag cho p-value nhỏ nhất)
 		self.best_lag_matrix: pd.DataFrame | None = None
-		# - binary_matrix: ma trận nhị phân theo ngưỡng alpha (1 là có Granger-cause)
 		self.binary_matrix: pd.DataFrame | None = None
 
 	def log(self):
@@ -62,26 +58,17 @@ class GrangerCausalityTesting(Testing):
 		print(f"Test Stat  : {self.test_stat}")
 
 		if self.binary_matrix is not None:
-			# Trừ đường chéo chính vì X -> X không xét nhân quả
 			edge_count = int(self.binary_matrix.values.sum() - np.trace(self.binary_matrix.values))
 			print(f"Significant edges (X -> Y): {edge_count}")
-
 		print("=" * 70)
 
 	def visitImageDataset(self, obj=None):
-		"""Không hỗ trợ dữ liệu ảnh cho kiểm định Granger."""
+		"""Kiểm định không hỗ trợ dữ liệu hình ảnh."""
 		raise ValueError("GrangerCausalityTesting chỉ hỗ trợ dữ liệu dạng bảng/time series.")
 
 	def visitTableDataset(self, obj):
-		"""
-		Nhận dataset object, rút DataFrame và chạy kiểm định.
-
-		Yêu cầu tối thiểu:
-		- obj phải có thuộc tính data (pd.DataFrame)
-		- dữ liệu phải có >= 2 cột số để kiểm định đa biến
-		"""
+		"""Thực thi kiểm định trên đối tượng TableDataset."""
 		self.dataset_name = getattr(obj, "_folder_path", type(obj).__name__)
-
 		if not hasattr(obj, "data") or obj.data is None:
 			raise ValueError("Dataset không hợp lệ hoặc chưa nạp dữ liệu (obj.data is None).")
 
@@ -91,24 +78,16 @@ class GrangerCausalityTesting(Testing):
 		self.test(obj.data)
 
 	def run(self, obj):
-		"""
-		Điểm vào chuẩn theo pattern Service/Testing của project.
-
-		Hỗ trợ các dataset dạng bảng (TableDataset/TimeSeriesDataset) thông qua visitTableDataset().
-		"""
+		"""Điểm vào thực thi kiểm định Granger."""
 		try:
 			obj_type = type(obj).__name__
-
 			if obj_type in {"TableDataset", "TimeSeriesDataset"}:
 				self.visitTableDataset(obj)
 			else:
-				# Nếu object không có type chuẩn nhưng vẫn có thuộc tính data DataFrame,
-				# ta vẫn hỗ trợ để tăng tính linh hoạt khi tái sử dụng.
 				if hasattr(obj, "data") and isinstance(getattr(obj, "data"), pd.DataFrame):
 					self.visitTableDataset(obj)
 				else:
 					raise ValueError(f"Lớp {self.__class__.__name__} chưa hỗ trợ type: {obj_type}")
-
 			self.status = "Success"
 		except Exception as exc:
 			self.status = f"Failed ({exc})"
@@ -118,17 +97,13 @@ class GrangerCausalityTesting(Testing):
 
 	def test(self, data: pd.DataFrame):
 		"""
-		Chạy Granger causality test cho mọi cặp biến trong tập biến đã chọn.
+		Chạy Granger causality test cho mọi cặp biến số.
 
-		Parameters
-		----------
-		data : pd.DataFrame
-			DataFrame đầu vào chứa nhiều biến số theo trục thời gian.
+		Input:
+			data: DataFrame chứa các biến số theo trục thời gian.
 
-		Returns
-		-------
-		tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]
-			(p_value_matrix, best_lag_matrix, binary_matrix)
+		Output:
+			Bộ ba ma trận (p_value_matrix, best_lag_matrix, binary_matrix).
 		"""
 		# 1) Chỉ giữ cột số để đảm bảo statsmodels xử lý được
 		numeric_df = data.select_dtypes(include=[np.number]).copy()
@@ -194,9 +169,7 @@ class GrangerCausalityTesting(Testing):
 
 					p_value_matrix.loc[cause, effect] = best_p
 					best_lag_matrix.loc[cause, effect] = int(best_lag)
-
 				except Exception:
-					# Giữ NaN nếu cặp biến không thể kiểm định (singular, constant, ...)
 					continue
 
 		# 5) Chuyển sang ma trận nhị phân theo ngưỡng alpha
@@ -210,18 +183,8 @@ class GrangerCausalityTesting(Testing):
 
 		return self.p_value_matrix, self.best_lag_matrix, self.binary_matrix
 
-	def visualize_directed_graph(
-		self,
-		title: str = "Granger Causality Directed Graph",
-		save_path: str | None = None,
-		show_edge_labels: bool = True,
-	):
-		"""
-		Trực quan hóa ma trận Granger-causality thành đồ thị có hướng.
-
-		Hàm này sử dụng logic đồ thị được định nghĩa trong
-		visualization.relationship.plot_granger_causality_directed_graph().
-		"""
+	def visualize_directed_graph(self, title: str = "Granger Causality Directed Graph", save_path: str = None, show_edge_labels: bool = True):
+		"""Trực quan hóa kết quả thành đồ thị hướng."""
 		if self.p_value_matrix is None:
 			raise ValueError("Chưa có kết quả kiểm định. Hãy chạy run(obj) hoặc test(data) trước.")
 
@@ -234,9 +197,7 @@ class GrangerCausalityTesting(Testing):
 		)
 
 	def get_significant_pairs(self) -> list[dict[str, Any]]:
-		"""
-		Trả về danh sách các cặp nhân quả có ý nghĩa thống kê (p-value < alpha).
-		"""
+		"""Trả về danh sách các cặp biến có ý nghĩa thống kê."""
 		if self.p_value_matrix is None or self.best_lag_matrix is None:
 			raise ValueError("Chưa có kết quả kiểm định. Hãy chạy run(obj) hoặc test(data) trước.")
 

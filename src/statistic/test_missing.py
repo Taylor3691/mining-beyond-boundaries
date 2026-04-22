@@ -7,16 +7,17 @@ from table.dataset import TableDataset
 
 class MCARLittleTesting(DistributionTesting):
     def __init__(self, alpha: float = 0.05):
+        """Khởi tạo kiểm định Little's MCAR cho dữ liệu thiếu."""
         super().__init__()
         self._step_name = "Little's MCAR Test (Global Chi-Square)"
         self._alpha = alpha
-        
         self._stat = None        # Giá trị Chi-square
         self._p_value = None
         self._df_chi2 = None     # Bậc tự do 
         self._is_mcar = False
 
     def run(self):
+        """Thực thi toàn bộ quy trình kiểm định."""
         if self._dataset is None:
             self._status = "Failed — Dataset is None"
             return
@@ -26,6 +27,7 @@ class MCARLittleTesting(DistributionTesting):
             self.test()
 
     def log(self):
+        """In trạng thái thực thi kiểm định."""
         print("=" * 55)
         print(f"Step    : {self._step_name}")
         print(f"Dataset : {self._dataset._folder_path if self._dataset else 'None'}")
@@ -33,6 +35,7 @@ class MCARLittleTesting(DistributionTesting):
         print("=" * 55)
 
     def visitTableDataset(self, obj):
+        """Gắn dữ liệu TableDataset vào bộ kiểm định."""
         try:
             self._dataset = obj
             self._status = "Success"
@@ -40,10 +43,7 @@ class MCARLittleTesting(DistributionTesting):
             self._status = f"Failed — {str(e)}"
 
     def test(self):
-        """
-        Thực hiện Little's MCAR Test bằng phương pháp xấp xỉ Chi-Square.
-        Tài liệu tham khảo: Little, R. J. A. (1988). A Test of Missing Completely at Random.
-        """
+        """Thực hiện Little's MCAR Test bằng phương pháp xấp xỉ Chi-Square."""
         try:
             # 1. Chỉ lấy dữ liệu số (Numeric) để tính toán ma trận
             df = self._dataset.data.select_dtypes(include=[np.number])
@@ -84,7 +84,7 @@ class MCARLittleTesting(DistributionTesting):
                 n_obs = len(obs_vars)
                 
                 if n_obs == 0 or n_obs == n_vars:
-                    continue # Bỏ qua dòng thiếu toàn bộ hoặc đầy đủ toàn bộ
+                    continue
                     
                 # Mean của nhóm pattern này
                 group_mean = group[obs_vars].mean()
@@ -120,6 +120,7 @@ class MCARLittleTesting(DistributionTesting):
             self._status = f"Failed in test() — {str(e)}"
 
     def _analyze(self):
+        """Phân tích kết luận và hiển thị báo cáo chi tiết."""
         if self._stat is None:
             display(Markdown("### Dataset không có dữ liệu thiếu."))
             return

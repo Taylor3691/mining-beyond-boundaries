@@ -9,6 +9,13 @@ class RemoveDuplication(Preprocessing):
     pre-determined set of indices. It moves those duplicate files to a separate directory.
     """
     def __init__(self, indices_to_remove: set, output_dir: str = None):
+        """
+        Khởi tạo lớp thực hiện loại bỏ ảnh trùng lặp.
+
+        Input:
+            indices_to_remove: Tập hợp các chỉ số (index) của ảnh cần loại bỏ.
+            output_dir: Thư mục để di chuyển các file trùng lặp vào (tùy chọn).
+        """
         if not isinstance(indices_to_remove, set):
             # Ép kiểu an toàn nếu lỡ truyền list
             indices_to_remove = set(indices_to_remove)
@@ -20,19 +27,37 @@ class RemoveDuplication(Preprocessing):
         self._moved_count = 0
 
     def fit(self, X, y=None):
+        """
+        Hàm fit tương thích với kiến trúc pipeline.
+        """
         return self
 
     def transform(self, X):
+        """
+        Hàm biến đổi (không thực hiện gì trong RAM cho X thô).
+        """
         return X
 
     def fit_transform(self, X, y=None):
+        """
+        Thực hiện fit và transform.
+        """
         return self.transform(X)
 
     def visitImageDataset(self, obj: ImageDataset):
+        """
+        Cổng kết nối để thực thi trên ImageDataset.
+        """
         self.run(obj)
         return self
 
     def run(self, obj: ImageDataset):
+        """
+        Thực hiện di chuyển file vật lý và cập nhật lại danh sách của Dataset.
+
+        Input:
+            obj: Đối tượng ImageDataset.
+        """
         initial_count = len(obj.image_paths)
         if initial_count == 0 or not self._indices_to_remove:
             print("Dataset is empty or no duplicates to remove.")
@@ -91,6 +116,13 @@ class RemoveDuplication(Preprocessing):
         self.log(initial_count, obj._size)
             
     def log(self, initial_count, final_count):
+        """
+        In thông tin tóm tắt về số lượng ảnh đã xóa và trạng thái sau khi xử lý.
+
+        Input:
+            initial_count: Số lượng ảnh ban đầu.
+            final_count: Số lượng ảnh sau khi xóa.
+        """
         print("\n--- Remove Duplication Preprocessing Log ---")
         print(f"1. Processing Step: Preprocessing - Remove Duplicates")
         print(f"2. Status: {self._status}")

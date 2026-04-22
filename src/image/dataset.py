@@ -4,7 +4,6 @@ from config import DEFAULT_SIZE, PATH_FOLDER_IMAGE_RAW, BATCH_SIZE, CLASS_INDEX,
 
 class ImageDataset(Object):
 
-    # Constructor
     def __init__(self, path: str | None = PATH_FOLDER_IMAGE_RAW):
         self._folder_path = path
         self._size = 0
@@ -16,7 +15,6 @@ class ImageDataset(Object):
         self._paths, self._labels, self._file_names = file.load_image_paths(path)
         return
     
-    # Getter
     @property
     def images(self):
         return self._images, self._labels
@@ -41,7 +39,6 @@ class ImageDataset(Object):
     def dataset_shape(self):
         return self._shape
 
-    # Setter
     @images.setter
     def images(self, value):
         if not value or len(value) == 0:

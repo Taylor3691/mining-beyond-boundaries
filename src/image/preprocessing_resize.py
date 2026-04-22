@@ -8,12 +8,17 @@ from config import PATH_FOLDER_IMAGE_TEST
 from core.service_base import Preprocessing
 from image.dataset import ImageDataset
 from config import SUPPORT_RESIZE
-# Import các hàm hỗ trợ từ utils
 from utils.metrics import calculate_single_psnr, calculate_single_ssim
 from visualization.relationship import plot_ssim_curve
 
 class ImageResize(Preprocessing):
     def __init__(self, transform_size: int):
+        """
+        Khởi tạo lớp thay đổi kích thước ảnh và đánh giá chất lượng.
+
+        Input:
+            transform_size: Kích thước mới của ảnh (ví dụ: 32, 64, 128).
+        """
         if transform_size not in SUPPORT_RESIZE:
             raise ValueError(f"Not Support This Size. Supported sizes: {SUPPORT_RESIZE}")
         
@@ -41,7 +46,12 @@ class ImageResize(Preprocessing):
         return self._avg_psnr
 
     def fit(self, arr: list):
-        """Update metadata dựa trên batch data được nạp vào"""
+        """
+        Cập nhật thông tin hình dạng ảnh gốc và đếm số lượng ảnh đã xử lý.
+
+        Input:
+            arr: Danh sách các mảng numpy chứa dữ liệu ảnh.
+        """
         if not arr:
             raise ValueError("Input array is empty. Cannot fit data.")
         
@@ -53,7 +63,15 @@ class ImageResize(Preprocessing):
         return
 
     def transform(self, arr: list) -> list:
-        """Resize toàn bộ dataset/batch và trả về list ảnh mới"""
+        """
+        Thực hiện thay đổi kích thước cho một danh sách ảnh sử dụng đa luồng.
+
+        Input:
+            arr: Danh sách ảnh gốc.
+
+        Output:
+            Danh sách ảnh sau khi đã thay đổi kích thước.
+        """
         def _resize_single(img):
             return cv2.resize(img, (self._size, self._size), interpolation=cv2.INTER_AREA)
 
@@ -63,23 +81,55 @@ class ImageResize(Preprocessing):
         return resized_list
 
     def fit_transform(self, arr: list) -> list:
+        """
+        Vừa cập nhật metadata vừa thực hiện resize ảnh.
+
+        Input:
+            arr: Dữ liệu ảnh đầu vào.
+
+        Output:
+            Dữ liệu ảnh sau khi xử lý.
+        """
         self.fit(arr)
         return self.transform(arr)
 
     def PSNR(self, original_imgs: list, resized_imgs: list) -> np.ndarray:
-        """Tính chỉ số PSNR giữa mảng ảnh gốc và mảng ảnh đã resized"""
+        """
+        Tính toán chỉ số PSNR (Peak Signal-to-Noise Ratio) để đánh giá độ thất thoát chất lượng.
+
+        Input:
+            original_imgs: Danh sách ảnh gốc.
+            resized_imgs: Danh sách ảnh đã resize.
+
+        Output:
+            Mảng numpy chứa điểm số PSNR của từng cặp ảnh.
+        """
         with concurrent.futures.ThreadPoolExecutor(max_workers=self._max_workers) as executor:
             psnr_list = list(executor.map(calculate_single_psnr, original_imgs, resized_imgs))
         return np.array(psnr_list)
 
     def SSIM(self, original_imgs: list, resized_imgs: list) -> np.ndarray:
-        """Tính chỉ số SSIM giữa mảng ảnh gốc và mảng ảnh đã resized"""
+        """
+        Tính toán chỉ số SSIM (Structural Similarity Index) để đánh giá độ tương đồng cấu trúc.
+
+        Input:
+            original_imgs: Danh sách ảnh gốc.
+            resized_imgs: Danh sách ảnh đã resize.
+
+        Output:
+            Mảng numpy chứa điểm số SSIM của từng cặp ảnh.
+        """
         with concurrent.futures.ThreadPoolExecutor(max_workers=self._max_workers) as executor:
             ssim_list = list(executor.map(calculate_single_ssim, original_imgs, resized_imgs))
         return np.array(ssim_list)
 
     def visitImageDataset(self, obj: ImageDataset):
-        """Thực hiện pipeline chính với cơ chế duyệt qua Generator (Batch Loader)"""
+        """
+        Xử lý quy trình resize và tính toán chất lượng cho đối tượng ImageDataset theo batch.
+
+        Input:
+            obj: Đối tượng ImageDataset.
+        """
         self._dataset_path = obj.folder_path if obj.folder_path else "Unknown Path"
         
         try:
@@ -123,10 +173,19 @@ class ImageResize(Preprocessing):
             self._error_message = str(e)
 
     def run(self, obj: ImageDataset):
+        """
+        Thực thi quá trình tiền xử lý resize.
+
+        Input:
+            obj: Đối tượng ImageDataset.
+        """
         self.visitImageDataset(obj)
         return
 
     def log(self):
+        """
+        In log kết quả về kích thước mục tiêu, số lượng xử lý và chất lượng ảnh (PSNR, SSIM).
+        """
         print("\n" + "="*50)
         print(f"1. Processing Step : {self._step_name}")
         print(f"2. Target Dataset  : {self._dataset_path}")

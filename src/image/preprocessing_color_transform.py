@@ -14,6 +14,13 @@ import os
 
 class ColorTransform(Preprocessing):
     def __init__(self, method: str = None, n: int = DEFAULT_N_COMPONENTS):
+        """
+        Khởi tạo lớp thực hiện biến đổi không gian màu và giảm chiều bằng PCA.
+
+        Input:
+            method: Tên không gian màu mục tiêu (v.d: HSV, Lab, YCrCb, Grayscale).
+            n: Số chiều (n_components) cho thuật toán IncrementalPCA.
+        """
         if method is None:
             raise ValueError("Cannot let the method empty")
         elif method not in SUPPORT_COLOR_SPACE:
@@ -28,6 +35,12 @@ class ColorTransform(Preprocessing):
         return
     
     def fit(self, obj: ImageDataset):
+        """
+        Huấn luyện bộ chuẩn hóa (Scaler) và thuật toán PCA trên dữ liệu ảnh.
+
+        Input:
+            obj: Đối tượng ImageDataset để lấy dữ liệu huấn luyện.
+        """
         code = COLOR_MAP[self._method]
         for batch, _ in obj.load():
             images = []
@@ -62,6 +75,15 @@ class ColorTransform(Preprocessing):
         return
     
     def transform(self, obj: ImageDataset):
+        """
+        Biến đổi không gian màu và áp dụng PCA để giảm chiều dữ liệu.
+
+        Input:
+            obj: Đối tượng ImageDataset.
+
+        Output:
+            Danh sách các mảng numpy đã được giảm chiều theo từng batch.
+        """
         code = COLOR_MAP[self._method]
         result = []
         for batch, _ in obj.load():
@@ -85,10 +107,22 @@ class ColorTransform(Preprocessing):
         return result
         
     def fit_transform(self, obj: ImageDataset):
+        """
+        Vừa huấn luyện vừa thực hiện biến đổi dữ liệu.
+
+        Input:
+            obj: Đối tượng ImageDataset.
+
+        Output:
+            Dữ liệu sau khi nén.
+        """
         self.fit(obj)
         return self.transform(obj)
 
     def log(self):
+        """
+        In thông tin tóm tắt về quá trình biến đổi màu và kết quả PCA.
+        """
         print(f"Bước xử lý : {self._step_name}")
         print(f"Tập dữ liệu: {self._dataset_name}")
         print(f"Trạng thái : {self._status}")
@@ -99,6 +133,12 @@ class ColorTransform(Preprocessing):
             print(f"PC{i+1}: {var:.6f}")
     
     def visitImageDataset(self, obj: ImageDataset):
+        """
+        Thực thi quy trình biến đổi không gian màu trên ImageDataset.
+
+        Input:
+            obj: Đối tượng ImageDataset.
+        """
         self._dataset_name = "Image Dataset"
         try:
             self.fit_transform(obj)
@@ -112,6 +152,12 @@ class ColorTransform(Preprocessing):
         return
     
     def run(self, obj: ImageDataset):
+        """
+        Hàm chạy chính của quy trình tiền xử lý màu.
+
+        Input:
+            obj: Đối tượng cần xử lý.
+        """
         if isinstance(obj, ImageDataset):
             self.visitImageDataset(obj)
         return 
@@ -122,40 +168,53 @@ class ColorTransformEvaluator(ColorTransform):
     Mở rộng thêm tính năng: Ép RAM siêu tốc, Huấn luyện Logistic Regression và Xuất file ảnh.
     """
     def __init__(self, method: str = None, n: int = DEFAULT_N_COMPONENTS):
+        """
+        Khởi tạo bộ đánh giá biến đổi màu, tối ưu cho việc cache dữ liệu vào RAM.
+
+        Input:
+            method: Không gian màu.
+            n: Số chiều giữ lại.
+        """
         # Kế thừa hoàn toàn hàm __init__ của class cha
         super().__init__(method=method, n=n)
-        # Ép PCA tăng batch_size để chạy lẹ hơn
+        # Tăng batch_size để tối ưu tốc độ
         self._pca = IncrementalPCA(n_components=n, batch_size=1024)
         self._transformed_data_cache = None 
 
     def visitImageDataset(self, obj: ImageDataset):
         """
-        Ghi đè (Override) hàm visitImageDataset để thu thập dữ liệu vào RAM
-        thay vì để nó bay mất như class gốc.
+        Ghi đè hàm xử lý dataset để lưu trữ dữ liệu đã biến đổi vào cache.
+
+        Input:
+            obj: Đối tượng ImageDataset.
         """
         self._dataset_name = "Image Dataset"
         print(f"   [INFO] Đang chạy Tiền xử lý (Fast-Cache Mode)...")
         try:
-            # Vẫn dùng lại logic chạy fit của class cha (Đọc đĩa 2 lần)
             self.fit(obj)
-            
-            # Khởi chạy transform của cha và gộp kết quả mảng (Đọc đĩa lần 3)
             batches = self.transform(obj)
             self._transformed_data_cache = np.vstack(batches)
             
-            # Cập nhật thông số để hàm log() của class cha in ra
             self._explanied_variance_sum = self._pca.explained_variance_.sum()
             self._explanied_variance_ratio_sum = self._pca.explained_variance_ratio_.sum()
             self._status = "Success"
         except Exception as e:
             self._status = f"Failed ({str(e)})"
         finally:
-            # Gọi lại hàm log nguyên bản của class cha
             self.log()
         return
             
     def evaluation(self, obj: ImageDataset, n_repeats: int = 3):
-        """Hàm mới: Đánh giá mô hình"""
+        """
+        Thực hiện đánh giá hiệu quả của không gian màu thông qua mô hình Logistic Regression.
+
+        Input:
+            obj: Đối tượng ImageDataset (dùng để lấy nhãn).
+            n_repeats: Số lần lặp lại quá trình train/test để lấy trung bình.
+
+        Output:
+            Từ điển chứa các chỉ số Accuracy, Precision, Recall, F1-score trung bình.
+        """
         print(f"\n[EVALUATION] Bắt đầu huấn luyện mô hình (Không gian: {self._method})...")
         start_time = time.time()
         
@@ -186,7 +245,13 @@ class ColorTransformEvaluator(ColorTransform):
         return avg_metrics
     
     def save_images(self, obj: ImageDataset, base_dir: str = "../data/preprocessing/color_space"):
-        """Hàm mới: Xuất ảnh ra ổ cứng để làm minh chứng"""
+        """
+        Lưu các mẫu ảnh đã được biến đổi không gian màu ra ổ cứng.
+
+        Input:
+            obj: Đối tượng ImageDataset.
+            base_dir: Thư mục gốc để lưu ảnh.
+        """
         save_dir = os.path.join(base_dir, self._method.lower())
         print(f"   [INFO] Đang xuất file ảnh ra: {save_dir} ... (Vui lòng đợi)")
         
