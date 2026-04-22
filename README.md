@@ -5,6 +5,7 @@
 - Báo cáo thực nghiệm và mô tả chi tiết đồ án tại [PDF](./docs/report.pdf)
 - Github: [mining-beyond-boundaries](https://github.com/Taylor3691/mining-beyond-boundaries)
 - Dữ liệu: [Drive](https://drive.google.com/drive/folders/1CeU6lBn2ezqJF7EqhpnOa-deqcfZg7uC?usp=drive_link) 
+- Phân công: [Google Sheet](https://docs.google.com/spreadsheets/d/1rtoR6K0IoPLpgj9U4qKEQ-JOqeFfI-DcvqiA9hehfnI/edit?usp=sharing)
 ---
 
 ## Mục lục
