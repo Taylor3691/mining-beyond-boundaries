@@ -1,16 +1,13 @@
-"""Feature-matrix preprocessing for one-step-ahead time-series forecasting."""
+"""Xử lý ma trận đặc trưng cho bài toán dự báo chuỗi thời gian (One-step-ahead forecasting)."""
 
 from __future__ import annotations
-
 from typing import Any, Iterable
-
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 from statsmodels.tsa.seasonal import STL, seasonal_decompose
 from statsmodels.tsa.stattools import pacf
-
 from core.service_base import Preprocessing
 
 

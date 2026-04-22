@@ -5,7 +5,6 @@ from sklearn.ensemble import IsolationForest
 from statsmodels.tsa.seasonal import STL
 from core.service_base import Preprocessing
 import os
-import pandas as pd
 from dataset import TimeSeriesDataset
 
 class DetectOutlierTimeSeries(Preprocessing):
@@ -24,20 +23,15 @@ class DetectOutlierTimeSeries(Preprocessing):
         self._window_size = window_size
         self._threshold = threshold
         self._contamination = contamination
-        
         self._stats: Dict[str, Any] = {}
         self._anomalies_mask = None # Lưu mảng boolean [True, False, ...]
         self._anomaly_indices: List[int] = [] # Lưu danh sách các index là dị thường
         return
-    
-    # ==========================================
-    # Getters & Setters
-    # ==========================================
+
     @property
     def method(self):
         return self._method
 
-    # Yêu cầu: Hàm dùng để chuyển method
     def set_method(self, new_method: str):
         if new_method not in self._supported_methods:
             raise ValueError(f"Method '{new_method}' not supported.")
@@ -47,7 +41,6 @@ class DetectOutlierTimeSeries(Preprocessing):
         self._anomaly_indices = []
         print(f"Đã chuyển phương pháp phát hiện dị thường sang: {self._method}")
 
-    # Yêu cầu: Hàm trả về danh sách các ứng viên khả năng
     def get_anomaly_candidates(self) -> List[int]:
         if self._anomaly_indices is None or len(self._anomaly_indices) == 0:
             print("Chưa có điểm dị thường nào được phát hiện. Vui lòng gọi fit() hoặc run() trước.")
@@ -56,9 +49,6 @@ class DetectOutlierTimeSeries(Preprocessing):
     def get_anomaly_mask(self) -> np.ndarray:
         return self._anomalies_mask
 
-    # ==========================================
-    # Core Logic
-    # ==========================================
     def fit(self, series: pd.Series):
         """Tính toán và tìm các điểm khả nghi dựa trên phương pháp đã chọn"""
         series_clean = series.bfill().ffill()
@@ -69,8 +59,6 @@ class DetectOutlierTimeSeries(Preprocessing):
             self._fit_isolation_forest(series_clean)
         elif self._method == 'stl':
             self._fit_stl_thresholding(series_clean)
-            
-        # Cập nhật danh sách ứng viên (lấy các index có giá trị True)
         self._anomaly_indices = np.where(self._anomalies_mask)[0].tolist()
 
     def transform(self, arr: np.ndarray):
@@ -123,13 +111,11 @@ class DetectOutlierTimeSeries(Preprocessing):
         return
 
     def visitImageDataset(self, obj):
-        """
-        BẮT BUỘC PHẢI CÓ để thỏa mãn abstract class Service.
-        Nhưng class này là xử lý chuỗi thời gian nên sẽ bỏ qua (pass) image.
-        """
+        """Không hỗ trợ dữ liệu hình ảnh."""
         pass
 
     def log(self):
+        """In thông tin tóm tắt kết quả phát hiện dị thường."""
         print(f"--- DetectOutlierTimeSeries Log ---")
         print(f"Method: {self._method}")
         print(f"Total anomalies detected: {len(self._anomaly_indices)}")
@@ -140,9 +126,6 @@ class DetectOutlierTimeSeries(Preprocessing):
             print(f"  - IQR Range: [{self._stats.get('lower_bound', 0):.4f}, {self._stats.get('upper_bound', 0):.4f}]")
         return
 
-    # ==========================================
-    # Implementations cho từng thuật toán
-    # ==========================================
     def _fit_zscore_deseasonalized(self, series: pd.Series):
         # 1. Phân rã để lấy seasonality
         stl = STL(series, period=self._window_size, robust=True)
@@ -197,7 +180,6 @@ class DetectOutlierTimeSeries(Preprocessing):
 
 
 
-# Import từ các module bạn đã setup
 from visualization.comparison import plot_anomalies_single_method, plot_anomalies_all_methods
 
 def main():
@@ -223,7 +205,6 @@ def main():
         pd.DataFrame({time_col: dates, target_col: values}).to_csv(data_path, index=False)
 
     try:
-        # Load Dataset
         dataset = TimeSeriesDataset(path=data_path, time_column=time_col)
         dataset.info()
         
@@ -241,7 +222,7 @@ def main():
     
     # Dictionary để lưu mask của tất cả các phương pháp phục vụ cho việc so sánh ở cuối
     all_masks_dict = {}
-    
+        
     # Danh sách 3 phương pháp cần test
     methods_to_test = ['z-score', 'iforest', 'stl']
 
@@ -272,7 +253,7 @@ def main():
             print(f"[LỖI] Không thể vẽ biểu đồ cho {method}: {e}")
 
     # 4. Vẽ biểu đồ so sánh tổng hợp
-    print("-" * 40)
+        print("-" * 40)
     print("[*] Đang vẽ biểu đồ so sánh tổng hợp tất cả các phương pháp...")
     try:
         plot_anomalies_all_methods(dataset=dataset, anomalies_dict=all_masks_dict)

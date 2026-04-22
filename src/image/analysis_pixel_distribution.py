@@ -6,31 +6,46 @@ from core.data_base import Object
 from image.dataset import ImageDataset
 from visualization.distribution import plot_histogram, plot_kde
 
-# Task 7
 
 class Distribution(Visualization):
     def __init__(self):
+        """
+        Khởi tạo lớp phân tích cơ bản.
+        """
         self.step_name = "Base Analysis"
         self.dataset_name = "Unknown"
         self.status = "Pending"
 
     def log(self):
+        """
+        In thông tin trạng thái hiện tại của quá trình phân tích.
+        """
         print(f"Bước xử lý : {self.step_name}")
         print(f"Tập dữ liệu: {self.dataset_name}")
         print(f"Trạng thái : {self.status}")
 
     # Thêm tham số target_size để ép size ảnh gọn nhẹ ngay từ lúc nạp
     def _extract_pixels(self, obj: ImageDataset, max_samples=200000, target_size=(64, 64)):
-        """ Task 7: Lấy thông tin pixel, giữ cấu trúc 3 kênh màu và áp dụng Sampling """
+        """
+        Trích xuất dữ liệu pixel từ tập dữ liệu ảnh sau khi resize.
+
+        Input:
+            obj: Đối tượng ImageDataset chứa danh sách đường dẫn ảnh.
+            max_samples: Số lượng pixel tối đa lấy ra để phân tích (mặc định 200,000).
+            target_size: Kích thước ảnh sau khi resize (mặc định 64x64).
+
+        Output:
+            Mảng numpy chứa dữ liệu pixel (số lượng mẫu, 3 kênh màu).
+        """
         print(f"[PROCESS] Đang trích xuất pixel theo Batch (Resize về {target_size})...")
         pixels_list = []
         total_images = len(obj.image_paths)
         processed = 0
 
-        # Thay vì lấy obj.images (có thể gây tràn RAM), ta dùng Generator load từng batch
+        # Load theo batch để tránh tràn bộ nhớ
         for batch_images, _ in obj.load():
             for img in batch_images:
-                # Ép cứng size để đồng nhất ma trận và cứu RAM
+                # Resize để đồng nhất ma trận và tiết kiệm RAM
                 img_resized = cv2.resize(img, target_size, interpolation=cv2.INTER_AREA)
                 pixels_list.append(img_resized.reshape(-1, 3))
             
@@ -41,7 +56,7 @@ class Distribution(Visualization):
             del batch_images
             gc.collect()
             
-        print("\n") # Xuống dòng cho đẹp log
+        print("\n")
 
         if len(pixels_list) == 0:
             raise ValueError("Dataset rỗng hoặc không nạp được ảnh.")
@@ -59,10 +74,19 @@ class Distribution(Visualization):
 
 class HistogramDistribution(Distribution):
     def __init__(self):
+        """
+        Khởi tạo lớp phân tích phân phối thông qua biểu đồ Histogram.
+        """
         super().__init__()
         self.step_name = "Histogram Distribution"
 
     def run(self, obj: Object):
+        """
+        Thực thi quá trình phân tích Histogram cho đối tượng dữ liệu.
+
+        Input:
+            obj: Đối tượng cần phân tích (thường là ImageDataset).
+        """
         if isinstance(obj, ImageDataset):
             self.visitImageDataset(obj)
         else:
@@ -70,6 +94,12 @@ class HistogramDistribution(Distribution):
             self.log()
 
     def visitImageDataset(self, obj: ImageDataset):
+        """
+        Xử lý cụ thể cho tập dữ liệu ImageDataset để vẽ Histogram.
+
+        Input:
+            obj: Đối tượng ImageDataset cụ thể.
+        """
         self.dataset_name = obj.folder_path or "ImageDataset"
         try:
             pixels = self._extract_pixels(obj)
@@ -84,10 +114,19 @@ class HistogramDistribution(Distribution):
 
 class KDEDistribution(Distribution):
     def __init__(self):
+        """
+        Khởi tạo lớp phân tích phân phối thông qua biểu đồ mật độ KDE.
+        """
         super().__init__()
         self.step_name = "KDE Distribution"
 
     def run(self, obj: Object):
+        """
+        Thực thi quá trình phân tích KDE cho đối tượng dữ liệu.
+
+        Input:
+            obj: Đối tượng cần phân tích.
+        """
         if isinstance(obj, ImageDataset):
             self.visitImageDataset(obj)
         else:
@@ -95,9 +134,15 @@ class KDEDistribution(Distribution):
             self.log()
 
     def visitImageDataset(self, obj: ImageDataset):
+        """
+        Xử lý cụ thể cho tập dữ liệu ImageDataset để vẽ KDE.
+
+        Input:
+            obj: Đối tượng ImageDataset cụ thể.
+        """
         self.dataset_name = obj.folder_path or "ImageDataset"
         try:
-            # max_samples=5000000 như ông set ban đầu để không vẽ quá lâu
+            # Giới hạn số lượng mẫu để tối ưu thời gian vẽ
             pixels = self._extract_pixels(obj, max_samples=5000000)
             
             plot_kde(pixels, title_suffix=f"[{self.dataset_name}]")
@@ -113,6 +158,12 @@ class PixelDataExtractor(Distribution):
     Chỉ gom dữ liệu, không vẽ biểu đồ.
     """
     def __init__(self, target_size=(64, 64)):
+        """
+        Khởi tạo lớp trích xuất dữ liệu pixel.
+
+        Input:
+            target_size: Kích thước ảnh để resize trước khi trích xuất.
+        """
         super().__init__()
         self.step_name = "Pixel Data Extraction"
         self.target_size = target_size
@@ -121,6 +172,15 @@ class PixelDataExtractor(Distribution):
         self.pixel_data_all = None
 
     def visitImageDataset(self, obj: ImageDataset):
+        """
+        Thực hiện quét batch và trích xuất dữ liệu pixel, nhãn từ dataset.
+
+        Input:
+            obj: Đối tượng ImageDataset.
+
+        Output:
+            Trả về chính đối tượng PixelDataExtractor sau khi đã nạp dữ liệu.
+        """
         self.dataset_name = obj.folder_path or "ImageDataset"
         print(f"[PROCESS] Đang trích xuất dữ liệu pixel theo Batch (Resize {self.target_size})...")
         images_temp = []
@@ -129,7 +189,7 @@ class PixelDataExtractor(Distribution):
         processed = 0
 
         try:
-            # Quét bằng Generator an toàn cho RAM
+            # Sử dụng Generator để xử lý dữ liệu lớn
             for batch_images, batch_indices in obj.load():
                 for img, path_idx in zip(batch_images, batch_indices):
                     img_resized = cv2.resize(img, self.target_size, interpolation=cv2.INTER_AREA)
@@ -155,11 +215,17 @@ class PixelDataExtractor(Distribution):
             print(f"\n[ERROR] {self.status}")
             
         finally:
-            self.log() # Tự động gọi hàm log của class cha Distribution
+            self.log()
             
         return self
 
     def run(self, obj: Object):
+        """
+        Chạy quy trình trích xuất dữ liệu.
+
+        Input:
+            obj: Đối tượng cần trích xuất.
+        """
         if isinstance(obj, ImageDataset):
             self.visitImageDataset(obj)
         else:

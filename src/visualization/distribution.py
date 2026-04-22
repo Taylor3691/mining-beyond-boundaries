@@ -8,9 +8,6 @@ from sklearn.manifold import TSNE
 import matplotlib.patches as mpatches
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 
-# ==========================================
-# Task 11: Kiểm tra Imbalance
-
 def plot_class_distribution(classes: list, counts: list):
     """
     Hàm vẽ Bar Chart so sánh số lượng ảnh giữa các lớp:
@@ -30,15 +27,14 @@ def plot_class_distribution(classes: list, counts: list):
 
     plt.figure(figsize=(12, 6))
     
-    # Khởi tạo mảng màu cho từng cột dựa trên điều kiện
     bar_colors = []
     for count in counts:
         if count == max_val:
-            bar_colors.append('#ff4d4d')  # Màu Đỏ (Nhấn mạnh lớp nhiều nhất)
+            bar_colors.append('#ff4d4d')
         elif count == min_val:
-            bar_colors.append('#4caf50')  # Màu Xanh lá (Nhấn mạnh lớp ít nhất)
+            bar_colors.append('#4caf50')
         else:
-            bar_colors.append('lightsteelblue') # Màu mặc định cho các lớp còn lại
+            bar_colors.append('lightsteelblue')
 
     bars = plt.bar(classes, counts, color=bar_colors, edgecolor='black')
 
@@ -47,11 +43,9 @@ def plot_class_distribution(classes: list, counts: list):
         plt.text(bar.get_x() + bar.get_width()/2, yval + (max_val * 0.02), 
                 int(yval), ha='center', va='bottom', fontsize=10, fontweight='bold')
 
-    # Vẽ đường cảnh báo ngang (horizontal line) nếu Max > 3 * Min
     if max_val > warning_threshold:
         plt.axhline(y=warning_threshold, color='orange', linestyle='--', linewidth=2, 
                     label=f'3x Minority Threshold ({warning_threshold} samples)')
-        # Hiển thị chú thích (Legend) cho đường cảnh báo
         plt.legend(loc='upper right', framealpha=0.9)
 
     plt.title("Image Class Distribution", fontsize=14, fontweight='bold', pad=15)
@@ -69,9 +63,6 @@ def plot_class_distribution(classes: list, counts: list):
     plt.savefig(output_file, dpi=300)
     print(f"\n[Visualizer] Chart successfully saved at: {output_file}")
 
-# ==========================================
-# Task 8: Phân tích phân phối Pixel (Histogram & KDE)
-# ==========================================
 def plot_histogram(pixel_data: np.ndarray, title_suffix: str = ""):
     """Vẽ Histogram cho 3 kênh màu R-G-B."""
     fig, axes = plt.subplots(1, 3, figsize=(18, 5), sharey=True)
@@ -185,9 +176,6 @@ def plot_tsne(images, labels, class_names, title_suffix="", n_samples=1000):
     display(fig)
     plt.close(fig)
     plt.close()
-# ==========================================
-# Task 10-Module 2: Phân tích phân phối dữ liệu (Histogram & KDE)
-# ==========================================
 
 def plot_column_distribution(data_series: np.ndarray, column_name: str, test_name: str = ""):
     """
@@ -247,7 +235,6 @@ def plot_ks_comparison_summary(ks_results: list, alpha: float = 0.05):
  
     fig, axes = plt.subplots(1, 2, figsize=(16, 6))
  
-    # ── Subplot 1: D-statistic ────────────────────────────────────────
     bars_d = axes[0].bar(methods, d_stats, color=bar_colors,
                          edgecolor='black', alpha=0.85)
     axes[0].set_title("So sánh K-S Statistic (D)", fontsize=14, fontweight='bold')
@@ -274,7 +261,6 @@ def plot_ks_comparison_summary(ks_results: list, alpha: float = 0.05):
     ]
     axes[0].legend(handles=legend_elems, loc='upper right', fontsize=10)
  
-    # ── Subplot 2: p-value ────────────────────────────────────────────
     p_max, p_min = max(p_values), min(p_values)
     use_log = (p_max / p_min > 100) if p_min > 0 else True
  

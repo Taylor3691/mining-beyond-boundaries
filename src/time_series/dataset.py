@@ -1,10 +1,18 @@
-# implement dataset class for time-series data
 import pandas as pd
 from core import Object, Service
 from utils import file  
 
 class TimeSeriesDataset(Object):
+    """Lớp quản lý dữ liệu chuỗi thời gian (Time-series Dataset)."""
+
     def __init__(self, path: str | None = None, time_column: str = 'Date'):
+        """
+        Khởi tạo tập dữ liệu chuỗi thời gian.
+
+        Input:
+            path: Đường dẫn tới file dữ liệu.
+            time_column: Tên cột chứa trục thời gian (mặc định 'Date').
+        """
         self._folder_path = path 
         self._time_column = time_column # Cột chứa trục thời gian
         
@@ -18,9 +26,6 @@ class TimeSeriesDataset(Object):
         if path:
             self.load()
 
-    # ==========================================
-    # Getters & Setters
-    # ==========================================
     @property
     def data(self):
         return self._data
@@ -67,10 +72,12 @@ class TimeSeriesDataset(Object):
         return
 
     def save(self, folder_path: str, file_name: str = "processed_timeseries.csv"):
+        """Lưu dữ liệu hiện tại vào file."""
         file.save_table(path=folder_path, data=self._data, file_name=file_name)
         return
 
     def set_target(self, target_column: str):
+        """Thiết lập biến mục tiêu (target) cho các mô hình dự báo."""
         if self._data is None:
             raise ValueError("Data is not loaded")
         if target_column not in self._columns:
@@ -82,15 +89,11 @@ class TimeSeriesDataset(Object):
         return self._features, self._target
 
     def temporal_split(self, train_ratio: float = 0.8):
-        """
-        Chia tập Train/Test theo thứ tự thời gian (Không xáo trộn ngẫu nhiên)
-        Cho yêu cầu 2.4.3.f của Đồ án.
-        """
+        """Chia dữ liệu thành hai tập Train/Test theo thứ tự thời gian (không xáo trộn)."""
         if self._data is None:
             raise ValueError("Dataset is empty. Call load() first.")
             
         split_idx = int(len(self._data) * train_ratio)
-        
         train_df = self._data.iloc[:split_idx].copy()
         test_df = self._data.iloc[split_idx:].copy()
         
