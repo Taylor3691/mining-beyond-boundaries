@@ -7,12 +7,23 @@
 
 Báo cáo thực nghiệm và tiến độ đồ án tại [PDF](./docs/report.pdf)
 
-README này hướng dẫn bạn chạy dự án từ đầu đến cuối:
-1. Cài môi trường
-2. Tải dataset từ Kaggle
-3. Đặt dataset đúng thư mục
-4. Chạy notebooks và scripts
-5. Cách sử dụng cơ bản
+## Mục lục
+
+1. [Yêu cầu](#1-yêu-cầu)
+2. [Clone và cài môi trường](#2-clone-và-cài-môi-trường)
+   - [2.1. Clone repo](#21-clone-repo)
+   - [2.2. Tạo virtual environment](#22-tạo-virtual-environment)
+   - [2.3. Cài dependencies](#23-cài-dependencies)
+3. [Tải dataset từ Kaggle](#3-tải-dataset-từ-kaggle)
+   - [3.1. Download trực tiếp trên web](#31-cách-1-download-trực-tiếp-trên-web)
+   - [3.2. Dùng Kaggle CLI](#32-cách-2-dùng-kaggle-cli)
+4. [Cấu trúc dữ liệu bắt buộc](#4-cấu-trúc-dữ-liệu-bắt-buộc)
+5. [Kiểm tra nhanh dữ liệu](#5-kiểm-tra-nhanh-dữ-liệu-đã-đặt-đúng-chưa)
+6. [Cách chạy đồ án](#6-cách-chạy-đồ-án)
+   - [6.1. Chạy bằng Notebook](#61-cách-khuyến-nghị-chạy-bằng-notebook)
+   - [6.2. Chạy module Python trực tiếp](#62-chạy-một-số-module-python-trực-tiếp)
+7. [Cách sử dụng](#7-cách-sử-dụng)
+8. [Lỗi thường gặp và cách xử lý](#8-lỗi-thường-gặp-và-cách-xử-lý)
 
 ---
 
