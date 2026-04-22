@@ -262,10 +262,48 @@ Nếu kết quả là `True` cho 2 file CSV và có đủ 10 class ảnh, bạn 
 3. Mở notebook trong `notebooks/`.
 4. Run cell từ trên xuống dưới.
 
-Notebook mẫu để test nhanh:
-- `notebooks/Hoang-image.imbalance.analysis.ipynb`
-- `notebooks/Duy-table.analysis.missing.value.ipynb`
-- `notebooks/Bao-time.series.analysis.stationarity.testing.ipynb`
+Danh sách notebook theo thứ tự chạy:
+
+**Phần 1 — Image:**
+
+| # | Notebook | Nội dung |
+|---|---|---|
+| EDA-a | `01-image-EDA-(a).histogram.analysis.ipynb` | Phân tích histogram ảnh |
+| EDA-b | `01-image-EDA-(b).imbalance.ipynb` | Phân tích mất cân bằng lớp |
+| EDA-c | `01-image-EDA-(c).preprocessing.deduplicate.process.ipynb` | Phát hiện & loại ảnh trùng (pHash) |
+| EDA-d | `01-image-EDA-(d).constrast.n.brightness.analysis.ipynb` | Phân tích contrast & brightness |
+| Prep-a | `01-image-preprocessing-(a).resize.ipynb` | Resize ảnh |
+| Prep-b | `01-image-preprocessing-(b).color.conversion.ipynb` | Chuyển đổi không gian màu |
+| Prep-c | `01-image-preprocessing-(c).normalization.ipynb` | Chuẩn hóa ảnh & kiểm định KS |
+| Prep-d | `01-image-preprocessing-(d).data.augmentation.ipynb` | Data augmentation |
+| Bonus-e | `01.bonus-image-(e).analysis.edge.detection.ipynb` | Phát hiện cạnh (edge detection) |
+| Bonus-f | `01.bonus-image-(f).analysis.feature.space.ipynb` | Phân tích không gian đặc trưng (PCA, t-SNE) |
+
+**Phần 2 — Table:**
+
+| # | Notebook | Nội dung |
+|---|---|---|
+| EDA-a | `02-table-EDA-(a)distribution.inspect.ipynb` | Kiểm tra phân phối dữ liệu |
+| EDA-b | `02-table-EDA-(b).correlation.ipynb` | Phân tích tương quan |
+| EDA-c | `02-table-EDA-(c).missing.value.ipynb` | Phân tích giá trị thiếu |
+| Prep-b | `02-table-preprocessing-(b).detect.outlier.ipynb` | Phát hiện outlier |
+| Prep-c | `02-table-preprocessing-(c).numeric.normalization.ipynb` | Chuẩn hóa dữ liệu số |
+| Prep-d | `02-table-preprocessing-(d).categorical.encoding.ipynb` | Mã hóa đặc trưng phân loại |
+| Prep-e | `02-table-preprocessing-(e).feature.selection.ipynb` | Lựa chọn đặc trưng |
+| Bonus-f | `02.bonus-table-(f).imbalance.handler.ipynb` | Xử lý mất cân bằng lớp |
+
+**Phần 3 — Time Series:**
+
+| # | Notebook | Nội dung |
+|---|---|---|
+| EDA-a | `03-time.series-EDA-(a).data.components.ipynb` | Phân tích thành phần dữ liệu |
+| EDA-b | `03-time.series-EDA-(b).correlation.structure.ipynb` | Phân tích cấu trúc tương quan |
+| EDA-c | `03-time.series-EDA-(c).rolling.statistic.ipynb` | Thống kê trượt (rolling) |
+| Prep-b | `03-time.series-preprocessing-(b).stationarity.testing.ipynb` | Kiểm định tính dừng |
+| Prep-c | `03-time.series-preprocessing-(c).decomposition.ipynb` | Phân rã chuỗi thời gian (STL) |
+| Prep-e | `03-time.series-preprocessing-(e).detect.outlier.ipynb` | Phát hiện dị thường |
+| Prep-f | `03-time.series-preprocessing-(f).feature.matrix.prediction.ipynb` | Xây dựng ma trận đặc trưng & dự báo |
+| Bonus-g | `03.bonus-time.series-(g).Granger.testing.ipynb` | Kiểm định nhân quả Granger |
 
 Lưu ý:
 - Nhiều notebook đã có đoạn `sys.path.append('../src')`, vì vậy nếu mở notebook đúng vị trí trong repo là chạy được.
