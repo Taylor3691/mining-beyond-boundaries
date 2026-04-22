@@ -4,6 +4,15 @@ from core import Service
 
 class ANOVATestAnalysis(Service):
     def __init__(self):
+        """
+        Khởi tạo đối tượng ANOVATestAnalysis.
+        
+        Input:
+            None.
+        
+        Output:
+            None.
+        """
         self._step_name = "Statistic Test: One-Way ANOVA"
         self._status = "Initialized"
         self.anova_results = []
@@ -11,6 +20,13 @@ class ANOVATestAnalysis(Service):
     def run(self, df_edge: pd.DataFrame, alpha: float = 0.05):
         """
         Thực hiện kiểm định ANOVA một chiều cho từng phương pháp phát hiện cạnh.
+        
+        Input:
+            df_edge: DataFrame chứa dữ liệu mật độ cạnh.
+            alpha: Mức ý nghĩa thống kê (mặc định là 0.05).
+        
+        Output:
+            DataFrame chứa kết quả kiểm định ANOVA cho từng phương pháp.
         """
         print(f"\n[STATISTIC] Bắt đầu kiểm định ANOVA (Mức ý nghĩa alpha = {alpha})...")
         methods = df_edge['Method'].unique()
@@ -44,7 +60,25 @@ class ANOVATestAnalysis(Service):
         return pd.DataFrame(self.anova_results)
 
     def visitImageDataset(self, dataset):
+        """
+        Hàm xử lý cho tập dữ liệu hình ảnh (chưa được triển khai trong lớp này).
+        
+        Input:
+            dataset: Đối tượng dữ liệu đầu vào.
+        
+        Output:
+            None.
+        """
         pass 
 
     def log(self):
+        """
+        Ghi log trạng thái của tiến trình.
+        
+        Input:
+            None.
+        
+        Output:
+            None.
+        """
         print(f"[STATUS] {self._step_name} - {self._status}")
