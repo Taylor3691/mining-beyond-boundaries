@@ -2,6 +2,7 @@
 
 Đồ án tiền xử lý dữ liệu cho môn **Data Mining 2026**, thực hiện khảo sát và cài đặt các kỹ thuật tiền xử lý trên 3 nhóm dữ liệu: **Image**, **Table** và **Time Series**. Đồ án bao gồm phân tích dữ liệu thô, xử lý giá trị thiếu, phát hiện & xử lý outlier, chuẩn hóa, mã hóa đặc trưng, xử lý mất cân bằng lớp, giảm chiều dữ liệu và nhiều kỹ thuật tiền xử lý khác.
 
+- Lý thuyết và thực nghiệm đo chi tiết tại: [Notebooks](./notebooks)
 - Báo cáo thực nghiệm và mô tả chi tiết đồ án tại [PDF](./docs/report.pdf)
 - Github: [mining-beyond-boundaries](https://github.com/Taylor3691/mining-beyond-boundaries)
 - Dữ liệu: [Drive](https://drive.google.com/drive/folders/1CeU6lBn2ezqJF7EqhpnOa-deqcfZg7uC?usp=drive_link) 
